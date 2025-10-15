@@ -1,0 +1,52 @@
+import { textHandler } from "./textHandler.js";
+import { stickerHandler } from "./stickerHandler.js";
+import { reactionHandler } from "./reactionHandler.js";
+import { config } from "../../config/env.js";
+import logger from "../../utils/logger.js"; // assuming you have your winston logger
+
+// Map message types to handlers
+const handlers = {
+    conversation: textHandler,
+    stickerMessage: stickerHandler,
+    reactionMessage: reactionHandler,
+};
+
+export async function handleMessage(sock, msg) {
+    const remoteJid = msg?.key?.remoteJid;
+    if (!remoteJid) return;
+
+    // Ignore non-whitelisted senders
+    if (!config.whitelist.includes(remoteJid)) {
+        logger.warn(`🚫 Ignored non-whitelisted sender: ${remoteJid}`);
+        return;
+    }
+
+    // Detect message type safely
+    const messageType = msg?.message ? Object.keys(msg.message)[0] : null;
+    if (!messageType) return;
+
+    // Log basic info about the message
+    const preview = (() => {
+        try {
+            if (msg.message.conversation) return msg.message.conversation.slice(0, 100);
+            if (msg.message.extendedTextMessage) return msg.message.extendedTextMessage.text.slice(0, 100);
+            return JSON.stringify(msg.message).slice(0, 100);
+        } catch {
+            return "Unable to preview message";
+        }
+    })();
+
+    logger.info(`📩 Message from ${remoteJid} [${messageType}]: ${preview}`);
+
+    const handler = handlers[messageType];
+    if (handler) {
+        try {
+            await handler(sock, msg);
+        } catch (err) {
+            logger.error(`❌ Error in handler for ${messageType} from ${remoteJid}:`, err);
+        }
+    } else {
+        logger.warn(`⚠️ Unhandled message type: ${messageType} from ${remoteJid}`);
+    }
+}
+
