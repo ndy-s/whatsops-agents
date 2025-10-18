@@ -1,6 +1,7 @@
 import "dotenv/config";
 
 const required = [
+    "SQLITE_URL",
     "OPENAI_API_KEY",
     "OPENAI_API_BASE_URL",
 ];
@@ -13,6 +14,7 @@ for (const key of required) {
 }
 
 export const config = {
+    sqliteUrl: process.env.SQLITE_URL,
     openaiApiKey: process.env.OPENAI_API_KEY,
     openaiBaseUrl: process.env.OPENAI_API_BASE_URL,
     whitelist: process.env.WHITELIST ? process.env.WHITELIST.split(",").map((id) => id.trim()) : [],

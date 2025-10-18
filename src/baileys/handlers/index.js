@@ -3,9 +3,12 @@ import { stickerHandler } from "./stickerHandler.js";
 import { reactionHandler } from "./reactionHandler.js";
 import { config } from "../../config/env.js";
 import logger from "../../utils/logger.js"; 
+import { loadContacts, upsertContact } from "../../utils/contacts.js";
+import { getDisplayName } from "../../utils/helpers.js";
 
 const handlers = {
     conversation: textHandler,
+    extendedTextMessage: textHandler,
     stickerMessage: stickerHandler,
     reactionMessage: reactionHandler,
 };
@@ -21,6 +24,11 @@ export async function handleMessage(sock, msg) {
 
     const messageType = msg?.message ? Object.keys(msg.message)[0] : null;
     if (!messageType) return;
+
+    sock.store.contacts = { ...loadContacts(), ...sock.store.contacts };
+
+    console.log(msg);
+    upsertContact(msg, sock);
 
     const preview = (() => {
         try {

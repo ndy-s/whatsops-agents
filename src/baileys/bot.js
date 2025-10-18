@@ -8,10 +8,16 @@ import fs from "fs";
 import path from "path";
 import logger from "../utils/logger.js";
 import { handleMessage } from "./handlers/index.js";
+import { openDB } from "../utils/db.js";
 
 const AUTH_INFO_PATH = path.join(process.cwd(), "auth_info");
 
+const store = { contacts: {} };
+const messageQueues = new Map();
+
 export async function startBot() {
+    await openDB();
+
     const { state, saveCreds } = await useMultiFileAuthState("auth_info");
     const { version } = await fetchLatestBaileysVersion();
 
@@ -19,6 +25,8 @@ export async function startBot() {
         version,
         auth: state,
     });
+
+    sock.store = store;
 
     sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
         if (qr) {
