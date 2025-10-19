@@ -61,7 +61,7 @@ export function replaceMentionsWithNames(text, mentions = [], contacts = {}, bot
 
 export function formatLLMMessage(senderName, messageText, quotedContext = "") {
     return [
-        // `[User: ${senderName}]`,
+        `[User: ${senderName}]`,
         quotedContext,
         `Message: "${messageText}"`
     ].filter(Boolean).join("\n");
