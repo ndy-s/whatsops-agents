@@ -55,10 +55,7 @@ export const apiRegistry = {
             excludeStep: {
                 required: false,
                 type: "array",
-                items: {
-                    type: "string",
-                    enum: ["SAVE", "CONT", "VERI"]
-                },
+                enum: ["SAVE", "CONT", "VERI"],
                 instructions: "List of process steps to exclude during API execution."
             }
         },
@@ -98,7 +95,6 @@ export const apiRegistry = {
             refNo: {
                 required: true,
                 type: "string",
-                format: "startsWith1188",
                 instructions: "Reference number must start with 1188."
             }
         },

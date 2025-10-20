@@ -146,6 +146,7 @@ export function splitTextForChat(text, maxLength = 400) {
     const paragraphs = text.split(/\n+/).map(p => p.trim()).filter(Boolean);
 
     for (const para of paragraphs) {
+
         // Split sentences by punctuation — but ignore numbers like "1." or "10.000"
         const sentences = para.split(
             /(?<!\d)\. (?=[A-Z0-9])|(?<=[!?])\s+(?=[A-Z0-9])/
@@ -159,36 +160,36 @@ export function splitTextForChat(text, maxLength = 400) {
             if ((currentChunk + " " + s).trim().length > maxLength) {
                 const punctuationMatch = currentChunk.match(/^(.*[.!?])\s+[A-Z0-9]?.*$/);
                 if (punctuationMatch) {
-                    let chunk = punctuationMatch[1].trim().replace(/[!.]+$/, "");
+                    let chunk = punctuationMatch[1].trim().replace(/[!.]+(?=\s*$)/, "");
                     if (chunk) chunks.push(chunk);
                     const remainder = currentChunk.slice(punctuationMatch[1].length).trim();
-                    currentChunk = remainder ? remainder + " " + s : s;
+                    currentChunk = remainder ? remainder + ". " + s : s;
                 } else {
-                    let chunk = currentChunk.trim().replace(/[!.]+$/, "");
+                    let chunk = currentChunk.trim().replace(/[!.]+(?=\s*$)/, "");
                     if (chunk) chunks.push(chunk); 
                     currentChunk = s;
                 }
             } else {
-                currentChunk += (currentChunk ? " " : "") + s;
+                currentChunk += (currentChunk ? ". " : "") + s;
             }
 
             // If sentence ends with strong punctuation, we can safely push a chunk
             if (/[.!?]$/.test(s) && currentChunk.length >= maxLength * 0.8) {
-                let chunk = currentChunk.trim().replace(/[!.]+$/, "");
+                let chunk = currentChunk.trim().replace(/[!.]+(?=\s*$)/, "");
                 if (chunk) chunks.push(chunk); 
                 currentChunk = "";
             }
         }
 
         if (currentChunk) {
-            let chunk = currentChunk.trim().replace(/[!.]+$/, "");
+            let chunk = currentChunk.trim().replace(/[!.]+(?=\s*$)/, "");
             if (chunk) chunks.push(chunk); 
             currentChunk = "";
         }
     }
 
     if (currentChunk) {
-        let chunk = currentChunk.trim().replace(/[!.]+$/, "");
+        let chunk = currentChunk.trim().replace(/[!.]+(?=\s*$)/, "");
         if (chunk) chunks.push(chunk); 
     }
 
