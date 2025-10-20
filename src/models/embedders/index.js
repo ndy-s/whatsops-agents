@@ -1,16 +1,16 @@
-import * as local from "./local-embedder.js";
-import * as openai from "./openai-embedder.js";
+import * as gpt3s from "./gpt3s-embedder.js";
+import * as minilm from "./minilm-embedder.js";
 import { config } from "../../config/env.js";
 
 let activeEmbedder = null;
 
-switch (config.embedderType) {
-    case "openai":
-        activeEmbedder = openai;
+switch (config.embeddingModel) {
+    case "gpt3s":
+        activeEmbedder = gpt3s;
         break;
-    case "local":
+    case "minilm":
     default:
-        activeEmbedder = local;
+        activeEmbedder = minilm;
         break;
 }
 

@@ -163,14 +163,14 @@ export function splitTextForChat(text, maxLength = 400) {
                     let chunk = punctuationMatch[1].trim().replace(/[!.]+(?=\s*$)/, "");
                     if (chunk) chunks.push(chunk);
                     const remainder = currentChunk.slice(punctuationMatch[1].length).trim();
-                    currentChunk = remainder ? remainder + ". " + s : s;
+                    currentChunk = remainder ? remainder + " " + s : s;
                 } else {
                     let chunk = currentChunk.trim().replace(/[!.]+(?=\s*$)/, "");
                     if (chunk) chunks.push(chunk); 
                     currentChunk = s;
                 }
             } else {
-                currentChunk += (currentChunk ? ". " : "") + s;
+                currentChunk += (currentChunk ? " " : "") + s;
             }
 
             // If sentence ends with strong punctuation, we can safely push a chunk

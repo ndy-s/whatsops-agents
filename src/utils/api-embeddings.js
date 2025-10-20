@@ -4,9 +4,10 @@ import crypto from "crypto";
 import logger from "./logger.js";
 import { embedder } from "../models/embedders/index.js";
 import { apiRegistry } from "../config/api-registry.js";
+import { config } from "../config/env.js";
 
 const DATA_DIR = path.resolve("./data");
-const EMBEDDINGS_FILE = path.join(DATA_DIR, "api-embeddings.json");
+const EMBEDDINGS_FILE = path.join(DATA_DIR, `api-embeddings-${config.embeddingModel}.json`);
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(EMBEDDINGS_FILE)) {

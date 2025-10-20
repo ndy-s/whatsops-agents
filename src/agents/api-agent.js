@@ -12,22 +12,24 @@ import { findRelevantApis } from "../utils/api-embeddings.js";
 import { DateTime } from "luxon";
 import logger from "../utils/logger.js";
 import { saveApiLog} from "../repositories/api-log-repository.js";
+import { config } from "../config/env.js";
 
 const jakartaTime = () => DateTime.now().setZone("Asia/Jakarta").toISO();
 
-export async function invokeAgent(remoteJid, userJid, fullMessageJSON, maxRetries = 2, useEmbedding = false) {
+export async function invokeAgent(remoteJid, userJid, fullMessageJSON, maxRetries = 2) {
     let retryCount = 0;
     let lastContent = "";
     let lastErrors = {};
 
     const shortTermMemory = getRecentMemory(userJid);
     const userMessage = formatLLMMessage(fullMessageJSON.sender, fullMessageJSON.content, fullMessageJSON.quotedContext);
-    logger.info(`[invokeAgent] user=${userJid} message length=${userMessage.length} useEmbedding=${useEmbedding}`);
+    logger.info(`[invokeAgent] user=${userJid} message length=${userMessage.length} useEmbedding=${config.useEmbedding}`);
 
     // 1. Build system prompt
     let systemPrompt;
-    if (useEmbedding) {
-        const relevant = await findRelevantApis(userMessage, 3);
+    if (config.useEmbedding) {
+        const fullContext = [...shortTermMemory.map(m => `[${m.role}] ${m.content}`), userMessage].join(" ");
+        const relevant = await findRelevantApis(fullContext, config.embeddingLimit);
         if (relevant.length) {
             systemPrompt = buildDynamicApiSystemPrompt(relevant);
             logger.info(`[invokeAgent] Using dynamic prompt for APIs: ${relevant.map(r => r.id).join(", ")}`);

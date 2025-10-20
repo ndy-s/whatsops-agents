@@ -52,7 +52,7 @@ export async function textHandler(sock, msg) {
     const fullMessageJSON = formatLLMMessageJSON(senderName, messageText, quotedContext);
 
     try {
-        const replyPromise = invokeAgent(remoteJid, senderJid, fullMessageJSON, 2, true);
+        const replyPromise = invokeAgent(remoteJid, senderJid, fullMessageJSON);
 
         (async () => {
             await new Promise(resolve => setTimeout(resolve, 3000));
@@ -62,7 +62,7 @@ export async function textHandler(sock, msg) {
         const replies = await replyPromise; 
 
         for (const reply of replies) {
-            const chunks = splitTextForChat(reply, 100);
+            const chunks = splitTextForChat(reply, 50);
 
             for (const [index, chunk] of chunks.entries()) {
                 await simulateTypingAndSend(sock, remoteJid, chunk, {

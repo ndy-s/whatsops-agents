@@ -7,7 +7,7 @@ const required = [
 ];
 
 const sqliteType = process.env.SQLITE_TYPE || "local";
-if (sqliteType === "cloud" && !process.env.SQLITE_URL) {
+if (sqliteType === "cloud" && !process.env.SQLITE_URL) {config
     console.error(`❌ Missing required environment variable for cloud SQLite: SQLITE_URL`);
     process.exit(1);
 }
@@ -23,7 +23,9 @@ export const config = {
     whitelist: process.env.WHITELIST ? process.env.WHITELIST.split(",").map((id) => id.trim()) : [],
 
     llmLocale: process.env.LLM_LOCALE || "en-US",
-    embedderType: process.env.EMBEDDER_TYPE || "local",
+    useEmbedding: process.env.USE_EMBEDDING === "true",
+    embeddingLimit: parseInt(process.env.EMBEDDING_LIMIT || "3", 10),
+    embeddingModel: process.env.EMBEDDING_MODEL || "minilm",
 
     sqliteType,
     sqliteUrl: process.env.SQLITE_URL,
