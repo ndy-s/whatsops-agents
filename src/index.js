@@ -1,3 +1,3 @@
-import { startBot } from "./baileys/bot.js";
+import { startBot } from "./core/bot.js";
 
 startBot();

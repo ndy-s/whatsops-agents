@@ -5,6 +5,7 @@ import { getDisplayName, parseJid, removeBotMention } from "../../helpers/whatsa
 import { getQuotedContext, replaceMentionsWithNames } from "../../helpers/mentions.js";
 import { formatLLMMessageJSON, splitTextForChat } from "../../helpers/llm.js";
 import { simulateTypingAndSend } from "../../helpers/simulate.js";
+import {getAgent} from "../../agents/index.js";
 
 export async function textHandler(sock, msg) {
     const { remoteJid, participant: participantJid } = msg.key;
@@ -46,7 +47,9 @@ export async function textHandler(sock, msg) {
     const fullMessageJSON = formatLLMMessageJSON(senderName, messageText, quotedContext);
 
     try {
-        const replyPromise = invokeAgent(remoteJid, senderJid, fullMessageJSON);
+        // const replyPromise = invokeAgent(remoteJid, senderJid, fullMessageJSON);
+        const agent = getAgent("api");
+        const replyPromise = agent.invoke(remoteJid, senderJid, fullMessageJSON);
 
         (async () => {
             await new Promise(resolve => setTimeout(resolve, 3000));
