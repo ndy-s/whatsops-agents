@@ -21,8 +21,20 @@ export async function handleMessage(sock, msg) {
         return;
     }
 
-    const messageType = msg?.message ? Object.keys(msg.message)[0] : null;
-    if (!messageType) return;
+
+    const knownTypes = [
+        "reactionMessage",
+        "conversation",
+        "extendedTextMessage",
+        "stickerMessage",
+    ];
+
+    let messageType = null;
+
+    if (msg.message) {
+        messageType = knownTypes.find(type => msg.message[type]);
+        if (!messageType) return;
+    }
 
     const preview = (() => {
         try {

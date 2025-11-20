@@ -1,4 +1,4 @@
-export const registry = {
+export const apiRegistry = {
     "LNO8888C.SVC": {
         description: "Loan Creation API. Create a loan for a customer.",
         fields: {

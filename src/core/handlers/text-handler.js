@@ -2,9 +2,9 @@ import logger from "../../helpers/logger.js";
 import { getContactName } from "../../helpers/contacts.js";
 import { getDisplayName, parseJid, removeBotMention } from "../../helpers/whatsapp.js";
 import { getQuotedContext, replaceMentionsWithNames } from "../../helpers/mentions.js";
-import { formatLLMMessageJSON, splitTextForChat } from "../../helpers/llm.js";
-import { simulateTypingAndSend } from "../../helpers/simulate.js";
+import { formatLLMMessageJSON } from "../../helpers/llm.js";
 import { getAgent } from "../../agents/index.js";
+import { sendChunkedMessage, sendPendingAction } from "../../helpers/message.js";
 
 export async function textHandler(sock, msg) {
     const { remoteJid, participant: participantJid } = msg.key;
@@ -45,33 +45,47 @@ export async function textHandler(sock, msg) {
 
     const fullMessageJSON = formatLLMMessageJSON(senderName, messageText, quotedContext);
 
+    const classifier = await getAgent("classifier");
+    if (!classifier) {
+        await sock.sendMessage(remoteJid, {
+            text: "Sorry, the AI is temporarily unavailable. Please try again later",
+        }, { quoted: msg });
+        return;
+    }
+
+    const { agent: selectedAgent, confidence } = await classifier.invoke(remoteJid, senderJid, fullMessageJSON);
+    logger.info(`🔎 Classifier chose agent=${selectedAgent}, confidence=${confidence}`);
+
     const presenceTimeout = setTimeout(async () => {
         await sock.sendPresenceUpdate("composing", remoteJid);
     }, 3000);
 
     try {
-        const agent = await getAgent("api");
+        const agent = await getAgent(selectedAgent);
         if (!agent) {
             await sock.sendMessage(remoteJid, {
-                text: "Sorry, the AI is temporarily unavailable. Please try again later",
+                text: `Sorry, the ${selectedAgent} engine is unavailable.`,
             }, { quoted: msg });
             return;
         }
 
-        const replies = await agent.invoke(remoteJid, senderJid, fullMessageJSON);
-        for (const reply of replies) {
-            const chunks = splitTextForChat(reply, 50);
-
-            for (const [index, chunk] of chunks.entries()) {
-                await simulateTypingAndSend(sock, remoteJid, chunk, {
-                    quoted: index === 0 ? msg : null,
-                    skipTyping: index === 0, 
-                    wpm: 120
-                });
+        const result = await agent.invoke(remoteJid, senderJid, fullMessageJSON);
+        if (result.type === "pending") {
+            if (result.message) {
+                await sendChunkedMessage(sock, remoteJid, msg, result.message);
             }
-        }
 
-        logger.info(`✅ Replied to ${remoteJid}: ${replies.map(r => r.slice(0, 100)).join(" | ")}`);
+            let i = 0;
+            for (const action of result.actions) {
+                await sendPendingAction(sock, msg, selectedAgent, remoteJid, senderJid, action, i++);
+            }
+            return;
+        } else if (result.type === "text") {
+            for (const reply of result.messages) {
+                await sendChunkedMessage(sock, remoteJid, msg, reply);
+            }
+            return;
+        }
     } catch (err) {
         clearTimeout(presenceTimeout);
         logger.error(`❌ Error processing message from ${remoteJid}:`, err);

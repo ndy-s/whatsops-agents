@@ -1,8 +1,12 @@
 import { getApiAgent } from "./api-agent/index.js";
 import logger from "../helpers/logger.js";
+import { getClassifierAgent } from "./classifier-agent/index.js";
+import { getSqlAgent } from "./sql-agent/index.js";
 
 export const agentRegistry = {
+    classifier: getClassifierAgent,
     api: getApiAgent,
+    sql: getSqlAgent,
 };
 
 export async function getAgent(agentId) {

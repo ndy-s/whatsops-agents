@@ -32,3 +32,5 @@ export function cosine(a, b) {
     return dot / (magA * magB + 1e-10);
 }
 
+export const PENDING_TIMEOUT = 60 * 1000;
+export const pendingAgentActions = {};

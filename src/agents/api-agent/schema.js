@@ -1,11 +1,11 @@
 import { z } from "zod";
 
-export const apiCallSchema = z.object({
+const apiCallSchema = z.object({
     id: z.string(),
     params: z.record(z.any()),
 });
 
-export const apiActionSchema = z.object({
+const apiActionSchema = z.object({
     thoughts: z.array(z.string()),
     type: z.literal("api_action"),
     inScope: z.literal(true),
@@ -15,7 +15,7 @@ export const apiActionSchema = z.object({
     }),
 });
 
-export const messageSchema = z.object({
+const messageSchema = z.object({
     thoughts: z.array(z.string()),
     type: z.literal("message"),
     inScope: z.boolean(),

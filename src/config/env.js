@@ -3,6 +3,10 @@ import "dotenv/config";
 const required = [
     "OPENROUTER_API_KEYS",
     "OPENROUTER_BASE_URL",
+    "BASE_API_URL",
+    "ORACLE_USER",
+    "ORACLE_PASSWORD",
+    "ORACLE_CONNECT_STRING"
 ];
 
 const sqliteType = process.env.SQLITE_TYPE || "local";
@@ -35,6 +39,9 @@ export const config = {
     llmLocale: process.env.LLM_LOCALE || "en-US",
     useEmbedding,
     embeddingLimit: parseInt(process.env.EMBEDDING_LIMIT || "3", 10),
+    embeddingLimitSql: parseInt(process.env.EMBEDDING_LIMIT_SQL || process.env.EMBEDDING_LIMIT || "3", 10),
+    embeddingLimitSchema: parseInt(process.env.EMBEDDING_LIMIT_SCHEMA || process.env.EMBEDDING_LIMIT || "3", 10),
+    embeddingLimitApi: parseInt(process.env.EMBEDDING_LIMIT_API || process.env.EMBEDDING_LIMIT || "3", 10),
     embeddingModel,
 
     sqliteType,
@@ -45,6 +52,12 @@ export const config = {
 
     openrouterApiKeys: parseEnvList(process.env.OPENROUTER_API_KEYS),
     openrouterBaseUrl: process.env.OPENROUTER_BASE_URL,
+
+    baseApiUrl: process.env.BASE_API_URL,
+
+    oracleUser: process.env.ORACLE_USER,
+    oraclePassword: process.env.ORACLE_PASSWORD,
+    oracleConnectString: process.env.ORACLE_CONNECT_STRING
 };
 
 console.log(
