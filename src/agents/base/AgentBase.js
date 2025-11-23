@@ -122,7 +122,7 @@ export class AgentBase {
 
                 if (this.useMemory) {
                     addMemory(userJid, "user", `[${fullMessageJSON.sender}] ${fullMessageJSON.content}`);
-                    addMemory(userJid, "assistant", validated.content.message || "[No message]");
+                    addMemory(userJid, "assistant", validated.content.message || "[Pending processing API/SQL confirmation]");
                 }
 
                 await this.logApi({

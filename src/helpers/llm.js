@@ -1,8 +1,8 @@
 
 export function detectAgentByKeywords(messageText) {
     const agent_keywords = {
-        api: ["api", "insert", "update", "delete", "modify", "manipulate"],
-        sql: ["sql", "query", "select", "table"]
+        api: ["api", "manipulate"],
+        sql: ["sql", "query"]
     };
 
     const lowerMsg = messageText.toLowerCase();
