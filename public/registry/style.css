@@ -138,6 +138,10 @@ h1 {
     gap: 10px;
 }
 
+button i, button svg {
+    margin-right: 6px;
+}
+
 .update-btn {
     background: #007bff; 
     color: #fff;
@@ -154,7 +158,7 @@ h1 {
 }
 
 .load-skeleton-btn {
-    background: #28a745; 
+    background: #6c757d; 
     color: #fff;
     padding: 10px 25px;
     font-size: 14px;
@@ -166,8 +170,9 @@ h1 {
 }
 
 .load-skeleton-btn:hover {
-    background: #218838; 
+    background: #5a6268;  
 }
+
 
 /* JSON error highlighting */
 .cm-json-error {
@@ -179,4 +184,10 @@ h1 {
     width: auto !important;
     background: #42a5f5 !important; 
 }
+
+.cm-line-changed {
+    background-color: #fff3cd !important;   /* soft yellow */
+    border-left: 4px solid #ffcc00 !important;
+}
+
 
