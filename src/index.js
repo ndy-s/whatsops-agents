@@ -1,6 +1,6 @@
 import { startBot } from "./core/bot.js";
-import { startLoanAgentLogViewer } from "./services/log-viewer.js";
+import { startOpsDashboard } from "./services/dashboard.js";
 
 startBot();
-startLoanAgentLogViewer(55555);
+startOpsDashboard();
 

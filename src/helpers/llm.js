@@ -6,11 +6,16 @@ export function detectAgentByKeywords(messageText) {
     };
 
     const lowerMsg = messageText.toLowerCase();
+
     for (const [agent, keywords] of Object.entries(agent_keywords)) {
-        if (keywords.some(keyword => lowerMsg.includes(keyword))) {
-            return agent;
+        for (const keyword of keywords) {
+            const regex = new RegExp(`\\b${keyword}\\b[\\d\\W]*`, "i");
+            if (regex.test(lowerMsg)) {
+                return agent;
+            }
         }
     }
+
     return null;
 }
 

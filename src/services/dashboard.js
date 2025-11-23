@@ -4,7 +4,7 @@ import { openSqliteDB } from "../db/sqlite.js";
 import logger from "../helpers/logger.js";
 import { config } from "../config/env.js";
 
-export async function startLoanAgentLogViewer(port = 4000) {
+export async function startOpsDashboard(port = 55555) {
     const db = await openSqliteDB();
     const app = express();
 
@@ -75,7 +75,7 @@ export async function startLoanAgentLogViewer(port = 4000) {
     });
 
     app.listen(port, () => {
-        logger.info(`📊 Ops Agent Logs Viewer running at http://localhost:${port}`);
+        logger.info(`📊 Ops Dashboard running at http://localhost:${port}`);
     });
 }
 

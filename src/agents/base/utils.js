@@ -1,6 +1,9 @@
 import { DateTime } from "luxon";
 import crypto from "crypto";
 
+export const pendingAgentActions = {};
+export const PENDING_TIMEOUT = 60 * 1000;
+
 export const jakartaTime = () => DateTime.now().setZone("Asia/Jakarta").toISO();
 
 export function stripCodeBlock(str) {
@@ -36,5 +39,3 @@ export function cosine(a, b) {
     return dot / (magA * magB + 1e-10);
 }
 
-export const PENDING_TIMEOUT = 60 * 1000;
-export const pendingAgentActions = {};

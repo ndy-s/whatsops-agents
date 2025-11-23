@@ -6,78 +6,187 @@ import { saveApiLog } from "../../repositories/api-log-repository.js";
 import { jakartaTime, stripCodeBlock, summarizeTokens } from "./utils.js";
 
 export class AgentBase {
-    constructor({ id, model, schema, buildPrompt, handleResult }) {
+    constructor({ id, model, schema, buildPrompt, handleResult, useMemory = true }) {
         this.id = id;
         this.model = model;
         this.schema = schema;
         this.buildPrompt = buildPrompt;
         this.handleResult = handleResult;
+        this.useMemory = useMemory;
+    }
+
+    parseModelContent(res) {
+        if (!res || res.content === undefined || res.content === null) return "";
+        return typeof res.content === "string"
+            ? stripCodeBlock(res.content.trim())
+            : res.content;
+    }
+
+    async logApi(params) {
+        await saveApiLog({
+            chatId: params.remoteJid,
+            userId: params.userJid,
+            systemPrompt: params.systemPrompt,
+            memoryPrompt: params.memoryPrompt,
+            userMessage: params.userMessage,
+            modelResponse: params.modelResponse ?? null,
+            validation: params.validation ?? null,
+            modelResMeta: params.modelResMeta ?? null,
+            retryCount: params.retryCount ?? 0,
+            success: params.success ?? false,
+            errorMessage: params.errorMessage ?? null,
+            metadata: {
+                timestamp: jakartaTime(),
+                memorySize: params.memorySize,
+                ...params.metadata
+            }
+        });
+    }
+
+    buildMessages(systemPrompt, memory, userMessage, retry, lastErrors, lastContent) {
+        const messages = [
+            new SystemMessage(systemPrompt),
+            ...memory.map(m => m.role === "user"
+                ? new HumanMessage(m.content)
+                : new AIMessage(m.content)
+            ),
+            new HumanMessage(userMessage)
+        ];
+
+        if (retry > 0) {
+            messages.push(
+                new HumanMessage(
+                    `Previous validation failed:\n${JSON.stringify(lastErrors, null, 2)}\nOriginal:\n${lastContent}`
+                )
+            );
+        }
+
+        return messages;
     }
 
     async invoke(remoteJid, userJid, fullMessageJSON, maxRetries = 2) {
-        let retry = 0, lastErrors = {}, lastContent = "";
-        const memory = getRecentMemory(userJid);
+        let retry = 0;
+        let lastErrors = {};
+        let lastContent = "";
+        let meta;
+
+        const memory = this.useMemory ? getRecentMemory(userJid) : [];
+        const memorySize = memory.length;
+
         const { systemPrompt, memoryPrompt, userMessage } = await this.buildPrompt(fullMessageJSON, memory);
 
         while (retry <= maxRetries) {
-            const messages = [
-                new SystemMessage(systemPrompt),
-                ...memory.map(m => m.role === "user" ? new HumanMessage(m.content) : new AIMessage(m.content)),
-                new HumanMessage(userMessage)
-            ];
-
-            if (retry > 0) {
-                messages.push(new HumanMessage(`Previous validation failed:\n${JSON.stringify(lastErrors, null, 2)}\nOriginal:\n${lastContent}`));
-            }
+            const messages = this.buildMessages(
+                systemPrompt,
+                memory,
+                userMessage,
+                retry,
+                lastErrors,
+                lastContent
+            );
 
             try {
-                logger.info(`[${this.id}] Calling model`);
-                const res = await this.model.invoke(messages);
-                const content = typeof res.content === "string" ? res.content.trim() : res.content;
+                logger.info(`[${this.id}] Calling model (retry #${retry})`);
 
-                if (!content || (typeof content === "string" && content.length === 0)) {
-                    retry++;
-                    logger.error(`[${this.id}] Empty model response, retrying (#${retry})`);
+                const res = await this.model.invoke(messages);
+                const rawContent = this.parseModelContent(res);
+
+                lastContent = rawContent;
+                meta = summarizeTokens(res, this.model);
+
+                if (!rawContent) {
                     lastErrors = { error: "Empty model response" };
+                    retry++;
+
+                    logger.error(`[${this.id}] Empty model response, retrying #${retry}`);
+
+                    await this.logApi({
+                        remoteJid,
+                        userJid,
+                        systemPrompt,
+                        memoryPrompt,
+                        userMessage,
+                        modelResponse: rawContent,
+                        modelResMeta: meta,
+                        retryCount: retry,
+                        success: false,
+                        errorMessage: "Empty model response",
+                        memorySize
+                    });
 
                     continue;
                 }
 
-                lastContent = content;
-
-                const rawContent = typeof res.content === "string" ? stripCodeBlock(res.content.trim()) : res.content;
                 const validated = parseAndValidateResponse(rawContent, this.schema);
-                logger.info(`[${this.id}] Validation passed for type=${validated.type}`);
+                logger.info(`[${this.id}] Validation passed (type=${validated.type})`);
 
-                addMemory(userJid, "user", `[${fullMessageJSON.sender}] ${fullMessageJSON.content}`);
-                addMemory(userJid, "assistant", validated.content.message || "[No message]");
+                if (this.useMemory) {
+                    addMemory(userJid, "user", `[${fullMessageJSON.sender}] ${fullMessageJSON.content}`);
+                    addMemory(userJid, "assistant", validated.content.message || "[No message]");
+                }
 
-                const meta = summarizeTokens(res, this.model);
-                await saveApiLog({
-                    chatId: remoteJid,
-                    userId: userJid,
+                await this.logApi({
+                    remoteJid,
+                    userJid,
                     systemPrompt,
                     memoryPrompt,
                     userMessage,
-                    modelResponse: content,
+                    modelResponse: rawContent,
                     validation: validated,
                     modelResMeta: meta,
                     retryCount: retry,
-                    metadata: { timestamp: jakartaTime(), rawResponse: res, memorySize: memory.length }
+                    success: true,
+                    memorySize,
+                    metadata: { rawResponse: res }
                 });
 
                 return this.handleResult(validated);
-
             } catch (err) {
-                if (err.code === 429) {
-                    logger.error(`[${this.id}] Rate limit reached for free model: ${err.message}`);
-                    return ["Sorry, the AI is temporarily unavailable. Please try again later"];
+                const errorMsg = err?.message || JSON.stringify(err);
+
+                // Handle rate limits
+                if (err?.code === 429) {
+                    logger.error(`[${this.id}] Rate limit error: ${errorMsg}`);
+
+                    await this.logApi({
+                        remoteJid,
+                        userJid,
+                        systemPrompt,
+                        memoryPrompt,
+                        userMessage,
+                        errorMessage: errorMsg,
+                        modelResMeta: meta,
+                        retryCount: retry,
+                        success: false,
+                        memorySize,
+                        metadata: { rateLimit: true }
+                    });
+
+                    return ["Sorry, the AI is temporarily unavailable. Please try again later."];
                 }
 
+                // Normal errors 
                 retry++;
-                lastErrors = err.name === "ZodError" ? extractValidationErrors(err, true) : { error: err.message };
-                logger.warn(`[${this.id}] Retry #${retry} failed:`, lastErrors);
-                console.log(err);
+
+                lastErrors = err.name === "ZodError"
+                    ? extractValidationErrors(err, true)
+                    : { error: errorMsg };
+
+                logger.warn(`[${this.id}] Retry #${retry} failed`, lastErrors);
+
+                await this.logApi({
+                    remoteJid,
+                    userJid,
+                    systemPrompt,
+                    memoryPrompt,
+                    userMessage,
+                    modelResponse: lastContent,
+                    modelResMeta: meta,
+                    errorMessage: errorMsg,
+                    retryCount: retry,
+                    success: false,
+                    memorySize
+                });
             }
         }
 

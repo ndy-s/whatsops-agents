@@ -63,7 +63,7 @@ export async function textHandler(sock, msg) {
         confidence = classifierResult.confidence;
 
         logger.info(`🔎 Classifier chose agent=${selectedAgent}, confidence=${confidence}`);
-        await sendClassifierTip(sock, msg, remoteJid, selectedAgent);
+        await sendClassifierTip(sock, remoteJid, selectedAgent);
     } else {
         logger.info(`🔎 Manual keyword detected, routing to agent=${selectedAgent}`);
     }

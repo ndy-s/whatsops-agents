@@ -3,19 +3,33 @@ import { splitTextForChat } from "./llm.js";
 import logger from "./logger.js";
 import { simulateTypingAndSend } from "./simulate.js";
 
+const classifierTipCooldown = new Map();
+const TIP_COOLDOWN_MS = 15 * 60 * 1000;
+
 function formatClassifierTip(selectedAgent) {
     const header = `💡 *Tip*`;
     const body =
-        "To improve performance, you can include keywords like \"api\" or \"sql\" to route your request to a specific agent.\n\n" +
-        `Your request is currently being processed by the "${selectedAgent}" agent. Please wait...`;
+        'To improve performance, you can include keywords like "api" or "sql" in your message to directly call the right agent.\n\n' +
+        `Your request is currently being processed by the ${selectedAgent.toUpperCase()} agent. Please wait...`;
 
-    return header + "\n\n" + body;
+    return `${header}\n\n${body}`;
 }
 
-export async function sendClassifierTip(sock, originalMsg, remoteJid, selectedAgent) {
+export async function sendClassifierTip(sock, remoteJid, selectedAgent) {
+    const now = Date.now();
+    const lastSent = classifierTipCooldown.get(remoteJid);
+
+    if (lastSent && now - lastSent < TIP_COOLDOWN_MS) {
+        const remaining = Math.ceil((TIP_COOLDOWN_MS - (now - lastSent)) / 60000);
+        logger.info(`⏳ Classifier tip skipped for ${remoteJid}. Cooldown active (${remaining} min left).`);
+        return;
+    }
+
     const messageText = formatClassifierTip(selectedAgent);
 
     await sock.sendMessage(remoteJid, { text: messageText });
+
+    classifierTipCooldown.set(remoteJid, now);
 }
 
 function formatPendingMessage(actionType, action, totalSeconds = 30) {

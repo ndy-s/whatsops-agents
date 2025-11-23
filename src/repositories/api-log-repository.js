@@ -6,8 +6,11 @@ export async function saveApiLog(logData) {
     const {
         chatId, userId, systemPrompt, memoryPrompt,
         userMessage, modelResponse, validation,
-        modelResMeta, retryCount = 0, metadata
+        modelResMeta, retryCount = 0, metadata,
+        success = true, errorMessage = null
     } = logData;
+
+    const validationType = validation?.type || null;
 
     if (config.sqliteType === "cloud") {
         const db = await openSqliteDB();
@@ -17,61 +20,64 @@ export async function saveApiLog(logData) {
                 INSERT INTO api_logs (
                     chat_id, user_id,
                     system_prompt, memory_prompt, user_message,
-                    model_response, validation_type, validation_errors,
+                    model_response, validation_type, 
                     model_name, token_prompt, token_completion, token_total,
-                    retry_count, metadata
+                    retry_count, metadata, success, error_message
                 ) VALUES (
                     ${chatId}, ${userId},
                     ${systemPrompt}, ${memoryPrompt}, ${userMessage},
-                    ${modelResponse}, ${validation?.type ?? null}, ${validation?.errors ? JSON.stringify(validation.errors) : null},
-                    ${modelResMeta?.modelName ?? null}, ${modelResMeta?.promptTokens ?? 0}, ${modelResMeta?.completionTokens ?? 0}, ${modelResMeta?.totalTokens ?? 0},
-                    ${retryCount ?? 0}, ${JSON.stringify(metadata || {})}
+                    ${modelResponse}, ${validationType}, 
+                    ${modelResMeta?.modelName ?? null},
+                    ${modelResMeta?.promptTokens ?? 0},
+                    ${modelResMeta?.completionTokens ?? 0},
+                    ${modelResMeta?.totalTokens ?? 0},
+                    ${retryCount},
+                    ${JSON.stringify(metadata || {})},
+                    ${success ? 1 : 0},
+                    ${errorMessage}
                 );
             `;
-
-            logger.info(`[saveApiLog] Logged API interaction for user=${userId} (cloud)`);
         } catch (err) {
-            logger.error(`[saveApiLog] Failed to save log (cloud) for user=${userId}:`, err);
+            logger.error(`[saveApiLog] CLOUD log error:`, err);
         } finally {
             db.close();
         }
 
     } else {
-        // Local DB
         try {
             const db = await openSqliteDB();
             const stmt = db.prepare(`
                 INSERT INTO api_logs (
                     chat_id, user_id,
                     system_prompt, memory_prompt, user_message,
-                    model_response, validation_type, validation_errors,
+                    model_response, validation_type, 
                     model_name, token_prompt, token_completion, token_total,
-                    retry_count, metadata
+                    retry_count, metadata, success, error_message
                 ) VALUES (
                     @chatId, @userId,
                     @systemPrompt, @memoryPrompt, @userMessage,
-                    @modelResponse, @validationType, @validationErrors,
+                    @modelResponse, @validationType, 
                     @modelName, @tokenPrompt, @tokenCompletion, @tokenTotal,
-                    @retryCount, @metadata
+                    @retryCount, @metadata, @success, @errorMessage
                 )
             `);
 
             stmt.run({
                 chatId, userId, systemPrompt, memoryPrompt, userMessage,
                 modelResponse,
-                validationType: validation?.type || null,
-                validationErrors: validation?.errors ? JSON.stringify(validation.errors) : null,
+                validationType,
                 modelName: modelResMeta?.modelName || null,
                 tokenPrompt: modelResMeta?.promptTokens || 0,
                 tokenCompletion: modelResMeta?.completionTokens || 0,
                 tokenTotal: modelResMeta?.totalTokens || 0,
                 retryCount,
-                metadata: JSON.stringify(metadata || {})
+                metadata: JSON.stringify(metadata || {}),
+                success: success ? 1 : 0,
+                errorMessage
             });
 
-            logger.info(`[saveApiLog] Logged API interaction for user=${userId} (local)`);
         } catch (err) {
-            logger.error(`[saveApiLog] Failed to save log (local) for user=${userId}:`, err);
+            logger.error(`[saveApiLog] LOCAL log error:`, err);
         }
     }
 }

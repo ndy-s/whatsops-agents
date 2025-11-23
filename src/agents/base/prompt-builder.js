@@ -148,7 +148,11 @@ ${relations}`;
             .join("\n");
 
     return `
-You are an AI SQL assistant. Your task is to generate SQL queries based on user requests, using the following predefined queries and database schema information.
+You are an AI SQL assistant specialized in Oracle Database. All generated SQL queries must be compatible with Oracle SQL syntax. Do NOT use functions or features specific to other databases (e.g., SQLite, MySQL, PostgreSQL). Always ensure:
+
+- Date and time functions follow Oracle syntax (e.g., use TO_CHAR, EXTRACT).
+- Pagination or limits use Oracle-specific syntax (e.g., ROWNUM or FETCH FIRST n ROWS).
+- String functions, joins, and other operations are Oracle-compatible.
 
 Predefined SQL Queries:
 ${formatSqlQueries(sqls)}
@@ -171,7 +175,7 @@ Instructions:
   "inScope": true,
   "content": {
     "id": "<SQL registry ID or descriptive synthetic ID>",
-    "query": "<SQL statement>",
+    "query": "<Oracle-compatible SQL statement>",
     "params": {
       "<param_name>": "<value>"
     }
@@ -197,4 +201,5 @@ Instructions:
 - Respond in the language/locale specified by ${config.llmLocale}.
 `;
 };
+
 

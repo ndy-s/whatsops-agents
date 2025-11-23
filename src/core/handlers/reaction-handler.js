@@ -1,7 +1,9 @@
+import fs from "fs";
 import logger from "../../helpers/logger.js";
 import { pendingAgentActions } from "../../agents/base/utils.js";
 import { callApi } from "../../services/api-service.js";
 import { callSql } from "../../services/sql-service.js";
+import { generateTableImage } from "../../helpers/images.js";
 
 export async function reactionHandler(sock, msg) {
     try {
@@ -43,7 +45,24 @@ export async function reactionHandler(sock, msg) {
             if (actionType === "api") {
                 result = await callApi(id, params);
             } else if (actionType === "sql") {
-                result = await callSql(query, params);
+                result = await callSql(query, params, true);
+
+                if (result && result.length > 0) {
+                    const imagePath = await generateTableImage(result);
+
+                    try {
+                        await sock.sendMessage(pending.userJid, {
+                            image: fs.readFileSync(imagePath),
+                            caption: `ID: \`${id}\`\nRows Retrieved: ${result.length}`
+                        });
+                    } finally {
+                        if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+                    }
+                } else {
+                    await sock.sendMessage(pending.userJid, {
+                        text: `ID: \`${id}\`\nNo data was returned from the query.`
+                    });
+                }
             } else {
                 throw new Error(`Unknown pending action type: ${actionType}`);
             }
