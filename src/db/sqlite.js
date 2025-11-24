@@ -43,9 +43,21 @@ export async function openSqliteDB() {
                     created_at DATETIME DEFAULT (datetime('now','localtime'))
                 );
             `;
-            logger.info("✅ Cloud database table 'api_logs' ready");
+
+            await dbCloudInstance.sql`
+                CREATE TABLE IF NOT EXISTS app_settings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key TEXT UNIQUE NOT NULL,
+                    value TEXT,
+                    type TEXT DEFAULT 'string',
+                    is_secret INTEGER DEFAULT 0,
+                    updated_at DATETIME DEFAULT (datetime('now','localtime'))
+                );
+            `;
+
+            logger.info("✅ Cloud database tables ready (api_logs & app_settings)");
         } catch (err) {
-            logger.error("❌ Failed to create cloud table:", err);
+            logger.error("❌ Failed to create cloud tables:", err);
             throw err;
         }
 
@@ -91,6 +103,19 @@ export async function openSqliteDB() {
                 created_at DATETIME DEFAULT (datetime('now','localtime'))
             );
         `);
+
+        dbLocalInstance.exec(`
+            CREATE TABLE IF NOT EXISTS app_settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                key TEXT UNIQUE NOT NULL,
+                value TEXT,
+                type TEXT DEFAULT 'string',
+                is_secret INTEGER DEFAULT 0,
+                updated_at DATETIME DEFAULT (datetime('now','localtime'))
+            );
+        `);
+
+        logger.info("✅ Local database tables ready (api_logs & app_settings)");
     } catch (err) {
         logger.error("❌ Failed to initialize local DB:", err);
         throw err;
@@ -98,4 +123,5 @@ export async function openSqliteDB() {
 
     return dbLocalInstance;
 }
+
 
