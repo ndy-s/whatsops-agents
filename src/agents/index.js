@@ -4,7 +4,7 @@ import { getClassifierAgent } from "./classifier-agent/index.js";
 import { getSqlAgent } from "./sql-agent/index.js";
 import { ModelManager } from "../models/llms/ModelManager.js";
 
-const modelManager = new ModelManager(["deepseek", "gemini"]);
+const modelManager = new ModelManager(["gemini", "deepseek"]);
 
 export const agentRegistry = {
     classifier: () => getClassifierAgent(modelManager),

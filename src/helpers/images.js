@@ -49,15 +49,12 @@ export async function generateTableImage(rows) {
     const ctx = temp.getContext("2d");
     ctx.font = "16px Sans";
 
-    // calculate column widths
     const colWidths = getColumnWidths(ctx, rows, columns);
 
-    // calculate total width
     const canvasWidth =
         padding * 2 +
         columns.reduce((sum, col) => sum + colWidths[col], 0);
 
-    // calculate row heights
     const rowHeights = [];
     let totalHeight = padding * 2 + rowBaseHeight; // header
 
@@ -71,11 +68,9 @@ export async function generateTableImage(rows) {
         totalHeight += maxH;
     }
 
-    // final canvas
     const canvas = createCanvas(canvasWidth, totalHeight);
     const final = canvas.getContext("2d");
 
-    // background
     final.fillStyle = "#ffffff";
     final.fillRect(0, 0, canvasWidth, totalHeight);
 
@@ -121,7 +116,6 @@ export async function generateTableImage(rows) {
         y += rh;
     });
 
-    // ensure directory exists
     const tmpDir = path.join(process.cwd(), "data", "tmp");
     fs.mkdirSync(tmpDir, { recursive: true });
     const filename = path.join(tmpDir, `table_${Date.now()}.png`);

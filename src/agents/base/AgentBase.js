@@ -1,9 +1,9 @@
 import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import logger from "../../helpers/logger.js";
 import { parseAndValidateResponse, extractValidationErrors } from "./response-validator.js";
-import { addMemory, getRecentMemory } from "../../memory/memory-store.js";
+import { addMemory, getRecentMemory } from "../../helpers/memory-store.js";
 import { saveApiLog } from "../../repositories/api-log-repository.js";
-import { jakartaTime, stripCodeBlock, summarizeTokens } from "./utils.js";
+import { jakartaTime, stripCodeBlock, summarizeTokens } from "../../helpers/utils.js";
 
 export class AgentBase {
     constructor({ id, model, schema, buildPrompt, handleResult, useMemory = true }) {

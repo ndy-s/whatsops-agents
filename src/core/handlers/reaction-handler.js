@@ -1,6 +1,6 @@
 import fs from "fs";
 import logger from "../../helpers/logger.js";
-import { pendingAgentActions } from "../../agents/base/utils.js";
+import { pendingAgentActions } from "../../helpers/utils.js";
 import { callApi } from "../../services/api-service.js";
 import { callSql } from "../../services/sql-service.js";
 import { generateTableImage } from "../../helpers/images.js";

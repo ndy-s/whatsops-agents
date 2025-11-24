@@ -1,4 +1,4 @@
-import { PENDING_TIMEOUT, pendingAgentActions } from "../agents/base/utils.js";
+import { PENDING_TIMEOUT, pendingAgentActions } from "./utils.js";
 import { splitTextForChat } from "./llm.js";
 import logger from "./logger.js";
 import { simulateTypingAndSend } from "./simulate.js";
