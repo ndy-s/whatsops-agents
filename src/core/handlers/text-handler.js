@@ -46,7 +46,7 @@ export async function textHandler(sock, msg) {
     const fullMessageJSON = formatLLMMessageJSON(senderName, messageText, quotedContext);
 
     // Select agent
-    let selectedAgent = detectAgentByKeywords(messageText);
+    let selectedAgent = await detectAgentByKeywords(messageText);
     let confidence = 1;
 
     if (!selectedAgent) {

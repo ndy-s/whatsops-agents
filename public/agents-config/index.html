@@ -13,240 +13,207 @@
 <button id="saveBtn" class="save-btn">💾 Save Configuration</button>
 
 <script>
-// ----------------------------
-//   CONFIG SECTION DEFINITION
-// ----------------------------
-const configSections = [
-    {
-        title: "Agent Controls",
-        id: "agent-controls",
-        fields: [
-            { key: "ENABLE_CLASSIFIER", label: "Classifier Agent", type: "toggle", readonly: true },
-            { key: "ENABLE_API_AGENT", label: "API Agent", type: "toggle" },
-            { key: "ENABLE_SQL_AGENT", label: "SQL Agent", type: "toggle" },
-        ]
-    },
-    {
-        title: "Authentication",
-        fields: [
-            { key: "APP_AUTH_USER", label: "Admin Username", type: "text" },
-            { key: "APP_AUTH_PASS", label: "Admin Password", type: "password" }
-        ]
-    },
-    {
-        title: "API Agent Settings",
-        id: "api-agent-section",
-        fields: [
-            { key: "BASE_API_URL", label: "Base API URL", type: "text" }
-        ]
-    },
-    {
-        title: "SQL Agent Settings (Oracle)",
-        id: "sql-agent-section",
-        fields: [
-            { key: "ORACLE_USER", label: "Oracle Username", type: "text" },
-            { key: "ORACLE_PASSWORD", label: "Oracle Password", type: "password" },
-            { key: "ORACLE_CONNECT_STRING", label: "Connection String", type: "text" }
-        ]
-    },
-    {
-        title: "SQLite Base Settings",
-        fields: [
-            { key: "SQLITE_TYPE", label: "SQLite Mode", type: "select", options: ["local", "cloud"] },
-            { key: "SQLITE_URL", label: "Cloud URL", type: "text", placeholder: "sqlite://cloud-url" }
-        ]
-    },
-    {
-        title: "LLM Embedding Settings",
-        fields: [
-            { key: "USE_EMBEDDING", label: "Enable Embedding", type: "toggle" },
-            { key: "EMBEDDING_MODEL", label: "Embedding Model", type: "select", options: ["minilm", "gpt3s"] },
-            { key: "EMBEDDING_LIMIT_SQL", label: "SQL Limit", type: "number" },
-            { key: "EMBEDDING_LIMIT_SCHEMA", label: "Schema Limit", type: "number" },
-            { key: "EMBEDDING_LIMIT_API", label: "API Limit", type: "number" }
-        ]
-    },
-    {
-        title: "LLM Provider API Keys",
-        fields: [
-            { key: "OPENAI_API_KEYS", label: "OpenAI API Keys (one per line)", type: "textarea" },
-            { key: "GOOGLEAI_API_KEYS", label: "GoogleAI Keys (one per line)", type: "textarea" },
-            { key: "OPENROUTER_API_KEYS", label: "OpenRouter Keys (one per line)", type: "textarea" },
-            { key: "OPENROUTER_BASE_URL", label: "OpenRouter Base URL", type: "text" }
-        ]
-    },
+    const configSections = [
+        {
+            title: "WhatsApp Settings",
+            fields: [
+                { key: "WHITELIST", label: "Whitelist (one per line)", type: "textarea" }
+            ]
+        },
+        {
+            title: "Agent Controls",
+            id: "agent-controls",
+            fields: [
+                { key: "ENABLE_CLASSIFIER", label: "Classifier Agent", type: "toggle", readonly: true },
+                { key: "ENABLE_API_AGENT", label: "API Agent", type: "toggle" },
+                { key: "ENABLE_SQL_AGENT", label: "SQL Agent", type: "toggle" },
+            ]
+        },
+        {
+            title: "Manual Classifier Keywords",
+            id: "classifier-keywords-section",
+            fields: [
+                { key: "SQL_KEYWORDS", label: "SQL Keywords (one per line)", type: "textarea" },
+                { key: "API_KEYWORDS", label: "API Keywords (one per line)", type: "textarea" }
+            ]
+        },
+        {
+            title: "API Agent Settings",
+            id: "api-agent-section",
+            fields: [
+                { key: "BASE_API_URL", label: "Base API URL", type: "text" }
+            ]
+        },
+        {
+            title: "SQL Agent Settings (Oracle)",
+            id: "sql-agent-section",
+            fields: [
+                { key: "ORACLE_USER", label: "Oracle Username", type: "text" },
+                { key: "ORACLE_PASSWORD", label: "Oracle Password", type: "password" },
+                { key: "ORACLE_CONNECT_STRING", label: "Connection String", type: "text" }
+            ]
+        },
+        {
+            title: "LLM Provider API Keys",
+            fields: [
+                { key: "OPENAI_API_KEYS", label: "OpenAI API Keys (one per line)", type: "textarea" },
+                { key: "GOOGLEAI_API_KEYS", label: "GoogleAI Keys (one per line)", type: "textarea" },
+                { key: "OPENROUTER_API_KEYS", label: "OpenRouter Keys (one per line)", type: "textarea" },
+                { key: "OPENROUTER_BASE_URL", label: "OpenRouter Base URL", type: "text" }
+            ]
+        },
+        {
+            title: "LLM Settings",
+            fields: [
+                { key: "LLM_LOCALE", label: "LLM Locale", type: "select", options: ["id-ID", "en-US", "zh-CN"] },
+                { key: "MODEL_PRIORITY", label: "Model Priority (top = highest)", type: "textarea" }
+            ]
+        },
+        {
+            title: "LLM Embedding Settings",
+            fields: [
+                { key: "USE_EMBEDDING", label: "Enable Embedding", type: "toggle" },
+                { key: "EMBEDDING_MODEL", label: "Embedding Model", type: "select", options: ["minilm", "gpt3s"] },
+                { key: "EMBEDDING_LIMIT_SQL", label: "SQL Limit", type: "number" },
+                { key: "EMBEDDING_LIMIT_SCHEMA", label: "Schema Limit", type: "number" },
+                { key: "EMBEDDING_LIMIT_API", label: "API Limit", type: "number" }
+            ]
+        },
+    ];
 
-    // --------------------------
-    //    NEW SECTIONS ADDED
-    // --------------------------
-    {
-        title: "Classifier Mode (Auto)",
-        id: "classifier-mode-section",
-        fields: [
-            { key: "CLASSIFIER_MODE", label: "Mode", type: "text", readonly: true }
-        ]
-    },
-    {
-        title: "Manual Classifier Keywords",
-        id: "classifier-keywords-section",
-        fields: [
-            { key: "SQL_KEYWORDS", label: "SQL Keywords (one per line)", type: "textarea" },
-            { key: "API_KEYWORDS", label: "API Keywords (one per line)", type: "textarea" }
-        ]
-    },
-    {
-        title: "LLM Model Priority",
-        id: "model-priority-section",
-        fields: [
-            { key: "MODEL_PRIORITY", label: "Model Priority (top = highest)", type: "textarea" }
-        ]
-    }
-];
+    async function loadConfig() {
+        let data = {};
+        try {
+            const res = await fetch("/api/settings");
+            const rows = await res.json();
 
-// ----------------------------
-//      LOAD CONFIG DATA
-// ----------------------------
-async function loadConfig() {
+            rows.forEach(r => {
+                let value = r.value;
+                if (r.type === "boolean") value = value === "true";
+                else if (r.type === "number") value = Number(value);
+                data[r.key] = value;
+            });
+        } catch (err) {
+            console.error("Failed to load settings from API:", err);
+            alert("Failed to load settings from API");
+            return;
+        }
 
-    const data = {
-        ENABLE_CLASSIFIER: true,
-        ENABLE_API_AGENT: true,
-        ENABLE_SQL_AGENT: false,
-        APP_AUTH_USER: "admin",
-        APP_AUTH_PASS: "password",
-        BASE_API_URL: "http://localhost:55555/api-dummy",
-        SQLITE_TYPE: "local",
-        SQLITE_URL: "",
-        ORACLE_USER: "",
-        ORACLE_PASSWORD: "",
-        ORACLE_CONNECT_STRING: "",
-        USE_EMBEDDING: true,
-        EMBEDDING_LIMIT_SQL: 3,
-        EMBEDDING_LIMIT_SCHEMA: 6,
-        EMBEDDING_LIMIT_API: 2,
-        EMBEDDING_MODEL: "minilm",
-        OPENAI_API_KEYS: "",
-        GOOGLEAI_API_KEYS: "",
-        OPENROUTER_API_KEYS: "",
-        OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1",
+        const container = document.getElementById("config-container");
+        container.innerHTML = "";
 
-        SQL_KEYWORDS: "",
-        API_KEYWORDS: "",
-        MODEL_PRIORITY: "deepseek\ngemini\ngpt",
-        CLASSIFIER_MODE: "manual-api"
-    };
+        configSections.forEach(section => {
+            const card = document.createElement("div");
+            card.className = "config-card";
+            card.dataset.sectionId = section.id || "";
 
-    const container = document.getElementById("config-container");
-
-    configSections.forEach(section => {
-        const card = document.createElement("div");
-        card.className = "config-card";
-        card.dataset.sectionId = section.id || "";
-
-        card.innerHTML = `
-            <div class="config-header">
-                <h2>${section.title}</h2>
-                <span class="toggle">▼</span>
-            </div>
-            <div class="config-body"></div>
-        `;
-
-        const body = card.querySelector(".config-body");
-
-        section.fields.forEach(f => {
-            const value = data[f.key] ?? "";
-            let inputHtml = "";
-
-            if (f.type === "toggle") {
-                inputHtml = `
-                    <label class="switch">
-                        <input type="checkbox" id="${f.key}" ${value ? "checked" : ""} ${f.readonly ? "disabled" : ""}>
-                        <span class="slider"></span>
-                    </label>
-                `;
-            } else if (f.type === "select") {
-                inputHtml = `
-                    <select id="${f.key}">
-                        ${f.options.map(o => `<option value="${o}" ${o === value ? "selected" : ""}>${o}</option>`).join("")}
-                    </select>
-                `;
-            } else if (f.type === "textarea") {
-                inputHtml = `<textarea id="${f.key}" rows="3">${value}</textarea>`;
-            } else {
-                inputHtml = `<input type="text" id="${f.key}" value="${value}" ${f.readonly ? "readonly" : ""}>`;
-            }
-
-            body.innerHTML += `
-                <div class="config-field">
-                    <label>${f.label}</label>
-                    ${inputHtml}
+            card.innerHTML = `
+                <div class="config-header">
+                    <h2>${section.title}</h2>
+                    <span class="toggle">▼</span>
                 </div>
+                <div class="config-body"></div>
             `;
+
+            const body = card.querySelector(".config-body");
+
+            section.fields.forEach(f => {
+                const value = data[f.key] ?? "";
+                console.log(`${f.key}: ${value}`);
+                let inputHtml = "";
+
+                if (f.type === "toggle") {
+                    inputHtml = `
+                        <label class="switch">
+                            <input type="checkbox" id="${f.key}" ${value ? "checked" : ""} ${f.readonly ? "disabled" : ""}>
+                            <span class="slider"></span>
+                        </label>
+                    `;
+                } else if (f.type === "select") {
+                    inputHtml = `
+                        <select id="${f.key}">
+                            ${f.options.map(o => `<option value="${o}" ${o === value ? "selected" : ""}>${o}</option>`).join("")}
+                        </select>
+                    `;
+                } else if (f.type === "textarea") {
+                    inputHtml = `<textarea id="${f.key}" rows="3">${value}</textarea>`;
+                } else {
+                    inputHtml = `<input type="text" id="${f.key}" value="${value}" ${f.readonly ? "readonly" : ""}>`;
+                }
+
+                body.innerHTML += `
+                    <div class="config-field">
+                        <label>${f.label}</label>
+                        ${inputHtml}
+                    </div>
+                `;
+            });
+
+            container.appendChild(card);
         });
 
-        container.appendChild(card);
-    });
-
-    attachHandlers();
-}
-
-// ----------------------------
-//      HANDLERS & LOGIC
-// ----------------------------
-function attachHandlers() {
-    document.querySelectorAll(".config-header").forEach(h => {
-        h.addEventListener("click", () =>
-            h.parentElement.classList.toggle("collapsed")
-        );
-    });
-
-    document.getElementById("ENABLE_API_AGENT").addEventListener("change", handleAgentRules);
-    document.getElementById("ENABLE_SQL_AGENT").addEventListener("change", handleAgentRules);
-
-    handleAgentRules();
-}
-
-function handleAgentRules() {
-    const apiOn = document.getElementById("ENABLE_API_AGENT").checked;
-    const sqlOn = document.getElementById("ENABLE_SQL_AGENT").checked;
-
-    const classifierEl = document.getElementById("ENABLE_CLASSIFIER");
-    const modeEl = document.getElementById("CLASSIFIER_MODE");
-
-    // Classifier auto logic
-    classifierEl.disabled = true;
-
-    if (!apiOn && !sqlOn) {
-        classifierEl.checked = false;
-        modeEl.value = "disabled";
-    } else {
-        classifierEl.checked = true;
-
-        if (apiOn && sqlOn) modeEl.value = "hybrid";
-        else if (apiOn) modeEl.value = "manual-api";
-        else if (sqlOn) modeEl.value = "manual-sql";
+        attachHandlers();
     }
 
-    // Toggle oracle/API sections
-    document.querySelector("[data-section-id='api-agent-section']").style.display = apiOn ? "block" : "none";
-    document.querySelector("[data-section-id='sql-agent-section']").style.display = sqlOn ? "block" : "none";
-}
+    function attachHandlers() {
+        document.querySelectorAll(".config-header").forEach(h => {
+            h.addEventListener("click", () =>
+                h.parentElement.classList.toggle("collapsed")
+            );
+        });
 
-// ----------------------------
-//      SAVE CONFIG
-// ----------------------------
-document.getElementById("saveBtn").addEventListener("click", async () => {
-    const payload = {};
-    document.querySelectorAll("#config-container input, select, textarea").forEach(el => {
-        payload[el.id] = el.type === "checkbox" ? el.checked : el.value;
+        document.getElementById("ENABLE_API_AGENT").addEventListener("change", handleAgentRules);
+        document.getElementById("ENABLE_SQL_AGENT").addEventListener("change", handleAgentRules);
+
+        handleAgentRules();
+    }
+
+    function handleAgentRules() {
+        const apiOn = document.getElementById("ENABLE_API_AGENT").checked;
+        const sqlOn = document.getElementById("ENABLE_SQL_AGENT").checked;
+
+        const classifierEl = document.getElementById("ENABLE_CLASSIFIER");
+
+        if (apiOn && sqlOn) {
+            classifierEl.checked = true;
+            classifierEl.disabled = false;
+        } else {
+            classifierEl.checked = false;
+            classifierEl.disabled = true;
+        }
+
+        document.querySelector("[data-section-id='api-agent-section']").style.display = apiOn ? "block" : "none";
+        document.querySelector("[data-section-id='sql-agent-section']").style.display = sqlOn ? "block" : "none";
+    }
+
+    document.getElementById("saveBtn").addEventListener("click", async () => {
+        const payload = {};
+        document.querySelectorAll("#config-container input, select, textarea").forEach(el => {
+            let value;
+            if (el.type === "checkbox") value = el.checked ? "true" : "false"; // convert boolean to string
+            else if (el.type === "number") value = el.value; // store as string
+            else value = el.value ?? "";
+
+            payload[el.id] = value;
+        });
+
+        try {
+            const res = await fetch("/api/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (data.success) alert("Configuration saved successfully!");
+            else alert("Failed to save configuration");
+        } catch (err) {
+            console.error(err);
+            alert("Error saving configuration");
+        }
     });
 
-    alert("Configuration saved!");
-});
-
-loadConfig();
+    loadConfig();
 </script>
 </body>
 </html>
-
 

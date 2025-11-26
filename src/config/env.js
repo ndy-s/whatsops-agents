@@ -1,74 +1,159 @@
 import "dotenv/config";
+import { settingsRepository } from "../repositories/settings-repository.js";
+import { sleep } from "../helpers/utils.js";
+import logger from "../helpers/logger.js";
 
-const required = [
-    "APP_AUTH_USER",
-    "APP_AUTH_PASS",
+const parseList = (value) =>
+    (value || "").split(",").map(v => v.trim()).filter(Boolean);
 
-    "BASE_API_URL",
-
-    "ORACLE_USER",
-    "ORACLE_PASSWORD",
-    "ORACLE_CONNECT_STRING",
-
-    "OPENROUTER_API_KEYS",
-    "OPENROUTER_BASE_URL",
-];
-
-const sqliteType = process.env.SQLITE_TYPE || "local";
-const useEmbedding = process.env.USE_EMBEDDING === "true";
-const embeddingModel = process.env.EMBEDDING_MODEL || "minilm";
-
-// Conditional requirements
-if (sqliteType === "cloud") {
-    required.push("SQLITE_URL");
-}
-
-if (useEmbedding && embeddingModel.toLowerCase().includes("gpt3")) {
-    required.push("OPENAI_API_KEYS");
-}
-
-for (const key of required) {
+const requiredEnv = ["APP_AUTH_USER", "APP_AUTH_PASS"];
+for (const key of requiredEnv) {
     if (!process.env[key]) {
         console.error(`❌ Missing required environment variable: ${key}`);
         process.exit(1);
     }
 }
 
-const parseEnvList = (value) => (value || "")
-    .split(",")
-    .map(v => v.trim())
-    .filter(Boolean);
+const REQUIRED_KEYS = [
+    "appAuthUser",
+    "appAuthPass",
+    "enableClassifier",
+    "enableApiAgent",
+    "enableSqlAgent",
+    "sqlKeywords",
+    "apiKeywords",
+    "baseApiUrl",
+    "oracleUser",
+    "oraclePassword",
+    "oracleConnectString",
+    "llmLocale",
+    "modelPriority",
+    "useEmbedding",
+    "embeddingModel",
+    "embeddingLimitSql",
+    "embeddingLimitSchema",
+    "embeddingLimitApi",
+    "openaiApiKeys",
+    "googleaiApiKeys",
+    "openrouterApiKeys",
+    "openrouterBaseUrl",
+];
 
-const baseEmbeddingLimit = parseInt("3", 10);
+export async function loadConfig() {
+    const [
+        enableClassifier,
+        enableApiAgent,
+        enableSqlAgent,
+        sqlKeywords,
+        apiKeywords,
+        baseApiUrl,
+        oracleUser,
+        oraclePassword,
+        oracleConnectString,
+        whitelistRaw,
+        llmLocale,
+        modelPriority,
+        useEmbeddingRaw,
+        embeddingModel,
+        embeddingLimitSqlRaw,
+        embeddingLimitSchemaRaw,
+        embeddingLimitApiRaw,
+        openaiKeysRaw,
+        googleaiKeysRaw,
+        openrouterKeysRaw,
+        openrouterBaseUrl,
+    ] = await Promise.all([
+        settingsRepository.get("ENABLE_CLASSIFIER"),
+        settingsRepository.get("ENABLE_API_AGENT"),
+        settingsRepository.get("ENABLE_SQL_AGENT"),
+        settingsRepository.get("SQL_KEYWORDS"),
+        settingsRepository.get("API_KEYWORDS"),
+        settingsRepository.get("BASE_API_URL"),
+        settingsRepository.get("ORACLE_USER"),
+        settingsRepository.get("ORACLE_PASSWORD"),
+        settingsRepository.get("ORACLE_CONNECT_STRING"),
+        settingsRepository.get("WHITELIST"),
+        settingsRepository.get("LLM_LOCALE"),
+        settingsRepository.get("MODEL_PRIORITY"),
+        settingsRepository.get("USE_EMBEDDING"),
+        settingsRepository.get("EMBEDDING_MODEL"),
+        settingsRepository.get("EMBEDDING_LIMIT_SQL"),
+        settingsRepository.get("EMBEDDING_LIMIT_SCHEMA"),
+        settingsRepository.get("EMBEDDING_LIMIT_API"),
+        settingsRepository.get("OPENAI_API_KEYS"),
+        settingsRepository.get("GOOGLEAI_API_KEYS"),
+        settingsRepository.get("OPENROUTER_API_KEYS"),
+        settingsRepository.get("OPENROUTER_BASE_URL"),
+    ]);
 
-export const config = {
-    appAuthUser: process.env.APP_AUTH_USER,
-    appAuthPass: process.env.APP_AUTH_PASS,
+    return {
+        appAuthUser: process.env.APP_AUTH_USER,
+        appAuthPass: process.env.APP_AUTH_PASS,
+        enableClassifier,
+        enableApiAgent,
+        enableSqlAgent,
+        sqlKeywords: parseList(sqlKeywords),
+        apiKeywords: parseList(apiKeywords),
+        baseApiUrl,
+        oracleUser,
+        oraclePassword,
+        oracleConnectString,
+        whitelist: parseList(whitelistRaw),
+        llmLocale: llmLocale || "en-US",
+        modelPriority: parseList(modelPriority),
+        useEmbedding: useEmbeddingRaw === true || useEmbeddingRaw === "true",
+        embeddingModel: embeddingModel || "minilm",
+        embeddingLimitSql: parseInt(embeddingLimitSqlRaw ?? 3, 10),
+        embeddingLimitSchema: parseInt(embeddingLimitSchemaRaw ?? 3, 10),
+        embeddingLimitApi: parseInt(embeddingLimitApiRaw ?? 3, 10),
+        openaiApiKeys: parseList(openaiKeysRaw),
+        googleaiApiKeys: parseList(googleaiKeysRaw),
+        openrouterApiKeys: parseList(openrouterKeysRaw),
+        openrouterBaseUrl,
+    };
+}
 
-    baseApiUrl: process.env.BASE_API_URL,
+export async function assertRequiredConfig() {
+    const config = await loadConfig();
+    const missing = REQUIRED_KEYS.filter(
+        (k) =>
+            config[k] === undefined ||
+            config[k] === null ||
+            config[k] === "" ||
+            (Array.isArray(config[k]) && config[k].length === 0)
+    );
 
-    sqliteType,
-    sqliteUrl: process.env.SQLITE_URL,
+    if (missing.length > 0) {
+        logger.warn(`⚠ Missing required config: ${missing.join(", ")}. Please set them in the dashboard.`);
+        return false;
+    }
 
-    oracleUser: process.env.ORACLE_USER,
-    oraclePassword: process.env.ORACLE_PASSWORD,
-    oracleConnectString: process.env.ORACLE_CONNECT_STRING,
+    return true;
+}
 
-    whitelist: parseEnvList(process.env.WHITELIST),
+export async function validateConfig(intervalMs = 5000) {
+    while (true) {
+        const config = await loadConfig();
+        const missingKeys = REQUIRED_KEYS.filter(
+            (key) =>
+                config[key] === undefined ||
+                config[key] === null ||
+                config[key] === "" ||
+                (Array.isArray(config[key]) && config[key].length === 0)
+        );
 
-    llmLocale: process.env.LLM_LOCALE || "en-US",
-    useEmbedding,
-    embeddingLimitSql: parseInt(process.env.EMBEDDING_LIMIT_SQL ?? baseEmbeddingLimit, 10),
-    embeddingLimitSchema: parseInt(process.env.EMBEDDING_LIMIT_SCHEMA ?? baseEmbeddingLimit, 10),
-    embeddingLimitApi: parseInt(process.env.EMBEDDING_LIMIT_API ?? baseEmbeddingLimit, 10),
-    embeddingModel,
+        if (missingKeys.length === 0) {
+            logger.info(
+                `[config] All required config is set. Loaded ${config.openaiApiKeys.length} OpenAI key(s), ${config.googleaiApiKeys.length} GoogleAI key(s), ${config.openrouterApiKeys.length} OpenRouter key(s)`
+            );
+            break;
+        }
 
-    openaiApiKeys: parseEnvList(process.env.OPENAI_API_KEYS),
+        logger.warn(
+            `⚠ Missing required config values: ${missingKeys.join(", ")}. Please set them in the dashboard. Retrying in ${intervalMs / 1000}s...`
+        );
 
-    googleaiApiKeys: parseEnvList(process.env.GOOGLEAI_API_KEYS),
+        await sleep(intervalMs);
+    }
+}
 
-    openrouterApiKeys: parseEnvList(process.env.OPENROUTER_API_KEYS),
-    openrouterBaseUrl: process.env.OPENROUTER_BASE_URL,
-};
-
-console.log(`[config] Loaded ${config.openaiApiKeys.length} OpenAI key(s), ${config.googleaiApiKeys.length} GoogleAI key(s), and ${config.openrouterApiKeys.length} OpenRouter key(s)`);

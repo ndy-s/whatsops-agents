@@ -1,70 +1,55 @@
 import fs from "fs";
 import path from "path";
 import DatabaseLocal from "better-sqlite3";
-import { Database as DatabaseCloud } from "@sqlitecloud/drivers";
 import logger from "../helpers/logger.js";
-import { config } from "../config/env.js";
 
 let dbLocalInstance = null;
-let dbCloudInstance = null;
 
-export async function openSqliteDB() {
-    // CLOUD DATABASE
-    if (config.sqliteType === "cloud") {
-        if (!config.sqliteUrl) {
-            throw new Error(
-                "❌ SQLITE_URL is required when SQLITE_TYPE=cloud. Please set it in your environment variables."
-            );
-        }
+async function seedDefaultSettings(db) {
+    const defaults = [
+        ["WHITELIST", "", "string", 0],
 
-        if (dbCloudInstance) return dbCloudInstance;
+        ["ENABLE_CLASSIFIER", "true", "boolean", 0],
+        ["ENABLE_API_AGENT", "true", "boolean", 0],
+        ["ENABLE_SQL_AGENT", "true", "boolean", 0],
 
-        dbCloudInstance = new DatabaseCloud(config.sqliteUrl);
+        ["SQL_KEYWORDS", "sql", "string", 0],
+        ["API_KEYWORDS", "api", "string", 0],
 
-        try {
-            await dbCloudInstance.sql`
-                CREATE TABLE IF NOT EXISTS api_logs (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    chat_id TEXT,
-                    user_id TEXT,
-                    system_prompt TEXT,
-                    memory_prompt TEXT,
-                    user_message TEXT,
-                    model_response TEXT,
-                    validation_type TEXT,
-                    success INTEGER DEFAULT 1,
-                    error_message TEXT,
-                    model_name TEXT,
-                    token_prompt INTEGER,
-                    token_completion INTEGER,
-                    token_total INTEGER,
-                    retry_count INTEGER DEFAULT 0,
-                    metadata TEXT DEFAULT '{}',
-                    created_at DATETIME DEFAULT (datetime('now','localtime'))
-                );
-            `;
+        ["BASE_API_URL", "http://localhost:55555/api-dummy", "string", 0],
 
-            await dbCloudInstance.sql`
-                CREATE TABLE IF NOT EXISTS app_settings (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    key TEXT UNIQUE NOT NULL,
-                    value TEXT,
-                    type TEXT DEFAULT 'string',
-                    is_secret INTEGER DEFAULT 0,
-                    updated_at DATETIME DEFAULT (datetime('now','localtime'))
-                );
-            `;
+        ["ORACLE_USER", "", "string", 1],
+        ["ORACLE_PASSWORD", "", "string", 1],
+        ["ORACLE_CONNECT_STRING", "", "string", 1],
 
-            logger.info("✅ Cloud database tables ready (api_logs & app_settings)");
-        } catch (err) {
-            logger.error("❌ Failed to create cloud tables:", err);
-            throw err;
-        }
+        ["OPENAI_API_KEYS", "", "string", 1],
+        ["GOOGLEAI_API_KEYS", "", "string", 1],
+        ["OPENROUTER_API_KEYS", "", "string", 1],
+        ["OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1", "string", 0],
 
-        return dbCloudInstance;
+        ["LLM_LOCALE", "en-US", "string", 0],
+        ["MODEL_PRIORITY", "gemini,deepseek", "string", 0],
+
+        ["USE_EMBEDDING", "true", "boolean", 0],
+        ["EMBEDDING_MODEL", "minilm", "string", 0],
+        ["EMBEDDING_LIMIT_SQL", "3", "number", 0],
+        ["EMBEDDING_LIMIT_SCHEMA", "6", "number", 0],
+        ["EMBEDDING_LIMIT_API", "2", "number", 0],
+    ];
+
+    const stmt = db.prepare(`
+        INSERT OR IGNORE INTO app_settings (key, value, type, is_secret)
+        VALUES (?, ?, ?, ?)
+    `);
+
+    for (const row of defaults) {
+        stmt.run(row);
     }
 
-    // LOCAL DATABASE
+    logger.info("🌱 Seeded default values into app_settings");
+}
+
+export async function openSqliteDB() {
     if (dbLocalInstance) return dbLocalInstance;
 
     try {
@@ -114,6 +99,12 @@ export async function openSqliteDB() {
                 updated_at DATETIME DEFAULT (datetime('now','localtime'))
             );
         `);
+
+        const rowCount = dbLocalInstance.prepare(`SELECT COUNT(*) AS count FROM app_settings`).get();
+
+        if (rowCount.count === 0) {
+            await seedDefaultSettings(dbLocalInstance);
+        }
 
         logger.info("✅ Local database tables ready (api_logs & app_settings)");
     } catch (err) {

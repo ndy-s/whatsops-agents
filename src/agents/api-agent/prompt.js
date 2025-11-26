@@ -1,6 +1,6 @@
 import { buildMemoryPrompt, apiRegistryPrompt } from "../base/prompt-builder.js";
 import { formatLLMMessage } from "../../helpers/llm.js";
-import { config } from "../../config/env.js";
+import { loadConfig } from "../../config/env.js";
 import logger from "../../helpers/logger.js";
 import { EmbeddingStore } from "../base/EmbeddingStore.js";
 import { apiRegistry } from "./registry.js";
@@ -8,6 +8,7 @@ import { apiRegistry } from "./registry.js";
 const apiStore = new EmbeddingStore("api-embeddings");
 
 export async function buildApiPrompt(msgJSON, memory) {
+    const config = await loadConfig();
     const userMessage = formatLLMMessage(
         msgJSON.sender, 
         msgJSON.content, 

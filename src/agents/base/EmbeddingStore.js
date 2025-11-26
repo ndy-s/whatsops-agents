@@ -2,10 +2,12 @@ import fs from "fs";
 import path from "path";
 import logger from "../../helpers/logger.js";
 import { embedder } from "../../models/embedders/index.js";
-import { config } from "../../config/env.js";
+import { loadConfig } from "../../config/env.js";
 import { cosine, flatten, hashText } from "../../helpers/utils.js";
 
+const config = await loadConfig();
 const DATA_DIR = path.resolve("./data");
+
 export class EmbeddingStore {
     constructor(storeName) {
         this.storeName = storeName;

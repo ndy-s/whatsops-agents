@@ -1,8 +1,10 @@
+import { loadConfig } from "../config/env.js";
 
-export function detectAgentByKeywords(messageText) {
+export async function detectAgentByKeywords(messageText) {
+    const config = await loadConfig();
     const agent_keywords = {
-        api: ["api", "manipulate"],
-        sql: ["sql", "query"]
+        api: config.apiKeywords,
+        sql: config.sqlKeywords
     };
 
     const lowerMsg = messageText.toLowerCase();

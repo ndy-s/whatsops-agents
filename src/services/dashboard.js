@@ -3,7 +3,7 @@ import path from "path";
 import express from "express";
 import { fileURLToPath } from "url";
 import logger from "../helpers/logger.js";
-import { config } from "../config/env.js";
+import { loadConfig } from "../config/env.js";
 import { openSqliteDB } from "../db/sqlite.js";
 import { apiRegistry } from "../agents/api-agent/registry.js";
 import { schemaRegistry,sqlRegistry } from "../agents/sql-agent/registry.js";
@@ -15,11 +15,9 @@ const apiRegistryFile = path.join(__dirname, "../agents/api-agent/registry.js");
 const sqlRegistryFile = path.join(__dirname, "../agents/sql-agent/registry.js");
 
 export async function startOpsDashboard(port = 55555) {
+    const config = await loadConfig();
     const db = await openSqliteDB();
     const app = express();
-
-    const USERNAME = config.appAuthUser;
-    const PASSWORD = config.appAuthPass;
 
     app.use(express.json());
 
@@ -38,7 +36,7 @@ export async function startOpsDashboard(port = 55555) {
         const decoded = Buffer.from(encoded, 'base64').toString();
         const [user, pass] = decoded.split(':');
 
-        if (user === USERNAME && pass === PASSWORD) return next();
+        if (user === config.appAuthUser && pass === config.appAuthPass) return next();
 
         res.setHeader('WWW-Authenticate', 'Basic realm="Ops Agent Logs"');
         return res.status(401).send("Authentication failed.");
@@ -160,6 +158,63 @@ export const sqlRegistry = ${JSON.stringify(newSqlRegistry, null, 4)};
         } catch (err) {
             logger.error("Failed to update SQL registry:", err);
             res.status(500).json({ error: "Failed to update SQL registry" });
+        }
+    });
+
+    app.get("/api/settings", (req, res) => {
+        try {
+            const rows = db.prepare("SELECT * FROM app_settings").all();
+
+            const normalized = rows.map(r => {
+                let value = r.value;
+                const key = r.key;
+
+                if ((key.endsWith("_API_KEYS") || (key.endsWith("_KEYWORDS")) || key === "WHITELIST") || key === "MODEL_PRIORITY") {
+                    if (typeof value === "string") value = value.split(",").join("\n");
+                }
+
+                return {
+                    ...r,
+                    value
+                };
+            });
+
+            res.json(normalized);
+        } catch (err) {
+            logger.error("Failed to fetch settings:", err);
+            res.status(500).json({ error: "Failed to fetch settings" });
+        }
+    });
+
+    app.post("/api/settings", (req, res) => {
+        try {
+            const settings = req.body;
+            const stmt = db.prepare(`
+            INSERT INTO app_settings (key, value)
+            VALUES (?, ?)
+            ON CONFLICT(key) DO UPDATE SET value=excluded.value
+        `);
+
+            for (const key in settings) {
+                let val = settings[key];
+
+                if (val === null || val === undefined) {
+                    val = "";
+                } else if (typeof val === "boolean") {
+                    val = val ? "true" : "false";
+                } else if ((key.endsWith("_API_KEYS") || (key.endsWith("_KEYWORDS")) || key === "WHITELIST") || key === "MODEL_PRIORITY" && typeof val === "string") {
+                    val = val.split("\n").map(s => s.trim()).filter(Boolean).join(",");
+                } else {
+                    val = val.toString();
+                }
+
+                stmt.run(key, val);
+            }
+
+            res.json({ success: true, message: "Settings saved" });
+        } catch (err) {
+            logger.error("Failed to save settings:", err);
+            res.status(500).json({ error: "Failed to save settings" });
         }
     });
 

@@ -6,6 +6,10 @@ export const PENDING_TIMEOUT = 60 * 1000;
 
 export const jakartaTime = () => DateTime.now().setZone("Asia/Jakarta").toISO();
 
+export function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function stripCodeBlock(str) {
     return str.replace(/```json\s*([\s\S]*?)```/, '$1').trim();
 }

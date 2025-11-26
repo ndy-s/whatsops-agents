@@ -8,18 +8,14 @@ import fs from "fs";
 import path from "path";
 import logger from "../helpers/logger.js";
 import { handleMessage } from "./handlers/index.js";
-import { openSqliteDB } from "../db/sqlite.js";
 import { enqueueMessage } from "../helpers/queue.js";
-import { openOracleDB } from "../db/oracle.js";
+import { assertRequiredConfig } from "../config/env.js";
 
 const AUTH_INFO_PATH = path.join(process.cwd(), "auth_info");
 
 const store = { contacts: {} };
 
 export async function startBot() {
-    await openSqliteDB();
-    await openOracleDB();
-
     const { state, saveCreds } = await useMultiFileAuthState("auth_info");
     const { version } = await fetchLatestBaileysVersion();
 
@@ -72,6 +68,11 @@ export async function startBot() {
     sock.ev.on("messages.upsert", async (m) => {
         for (const msg of m.messages) {
             if (!msg.message || msg.key.fromMe) continue;
+
+            if (!await assertRequiredConfig()) {
+                logger.warn(`Skipping message from ${msg.key.remoteJid} due to missing config.`);
+                continue;
+            }
 
             const chatId = msg.key.remoteJid;
             enqueueMessage(chatId, async () => {

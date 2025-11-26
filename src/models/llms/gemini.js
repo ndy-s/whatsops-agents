@@ -1,6 +1,7 @@
-import { config } from "../../config/env.js";
+import { loadConfig } from "../../config/env.js";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 
+const config = await loadConfig();
 export const apiKeys = config.googleaiApiKeys || [];
 
 export function createModel(apiKey) {

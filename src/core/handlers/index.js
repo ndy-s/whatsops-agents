@@ -1,7 +1,7 @@
 import { textHandler } from "./text-handler.js";
 import { stickerHandler } from "./sticker-handler.js";
 import { reactionHandler } from "./reaction-handler.js";
-import { config } from "../../config/env.js";
+import { loadConfig } from "../../config/env.js";
 import logger from "../../helpers/logger.js";
 import { loadContacts, upsertContact } from "../../helpers/contacts.js";
 
@@ -13,6 +13,7 @@ const handlers = {
 };
 
 export async function handleMessage(sock, msg) {
+    const config = await loadConfig();
     const remoteJid = msg?.key?.remoteJid;
     if (!remoteJid) return;
 

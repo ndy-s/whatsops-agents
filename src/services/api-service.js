@@ -1,8 +1,9 @@
 import fetch from "node-fetch";
 import logger from "../helpers/logger.js";
-import { config } from "../config/env.js"; 
+import { loadConfig } from "../config/env.js";
 
 export async function callApi(apiId, params = {}) {
+    const config = await loadConfig();
     const url = `${config.baseApiUrl}/${apiId}`;
 
     try {

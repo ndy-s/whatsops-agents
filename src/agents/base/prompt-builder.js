@@ -1,4 +1,6 @@
-import { config } from "../../config/env.js";
+import { loadConfig } from "../../config/env.js";
+
+const config = await loadConfig();
 
 export function buildMemoryPrompt(shortTermMemory) {
     return shortTermMemory

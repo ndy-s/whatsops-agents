@@ -2,8 +2,11 @@ import { AgentBase } from "../base/AgentBase.js";
 import { handleSqlResult } from "./handler.js";
 import { buildSqlPrompt } from "./prompt.js";
 import { sqlAgentSchema } from "./schema.js";
+import { openOracleDB } from "../../db/oracle.js";
 
 export async function getSqlAgent(modelManager) {
+    await openOracleDB();
+
     const model = await modelManager.getModel();
     if (!model) return null;
 

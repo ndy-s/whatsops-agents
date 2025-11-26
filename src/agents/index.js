@@ -3,16 +3,18 @@ import logger from "../helpers/logger.js";
 import { getClassifierAgent } from "./classifier-agent/index.js";
 import { getSqlAgent } from "./sql-agent/index.js";
 import { ModelManager } from "../models/llms/ModelManager.js";
-
-const modelManager = new ModelManager(["gemini", "deepseek"]);
-
-export const agentRegistry = {
-    classifier: () => getClassifierAgent(modelManager),
-    api: () => getApiAgent(modelManager),
-    sql: () => getSqlAgent(modelManager),
-};
+import { loadConfig } from "../config/env.js";
 
 export async function getAgent(agentId) {
+    const config = await loadConfig();
+    const modelManager = new ModelManager(config.modelPriority);
+
+    const agentRegistry = {
+        classifier: () => getClassifierAgent(modelManager),
+        api: () => getApiAgent(modelManager),
+        sql: () => getSqlAgent(modelManager),
+    };
+
     const factory = agentRegistry[agentId];
     if (!factory) {
         logger.error(`Agent ID "${agentId}" not found in registry`);

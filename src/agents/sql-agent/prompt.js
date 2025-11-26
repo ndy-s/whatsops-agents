@@ -1,4 +1,4 @@
-import { config } from "../../config/env.js";
+import { loadConfig } from "../../config/env.js";
 import logger from "../../helpers/logger.js";
 import { formatLLMMessage } from "../../helpers/llm.js";
 import { EmbeddingStore } from "../base/EmbeddingStore.js";
@@ -9,6 +9,7 @@ const sqlStore = new EmbeddingStore("sql-embeddings");
 const schemaStore = new EmbeddingStore("schema-embeddings");
 
 export async function buildSqlPrompt(msgJSON, memory) {
+    const config = await loadConfig();
     const userMessage = formatLLMMessage(
         msgJSON.sender, 
         msgJSON.content, 
