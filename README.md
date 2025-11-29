@@ -29,7 +29,7 @@ Or even something operational like:
 
 > “Hey @Bot, create a loan account for UAT testing with a random user, any balance is fine, just make sure the account is active.”
 
-The agents take over from there. They generate the SQL, make the API calls, retrieve the data, validate the response, and return everything back to you. There are no extra steps and no friction. It's just a natural conversation that gets work done.
+The agents take over from there. They generate the SQL or make the API calls, retrieve the data, validate the response, and return everything back to you. There are no extra steps and no friction. It's just a natural conversation that gets work done.
 
 ### Why It's Cheap to Run
 
