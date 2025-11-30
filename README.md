@@ -56,7 +56,7 @@ If you ever want to scale it further or make it more powerful, switching to a pa
 
 ## Quick Setup
 
-Getting everything running is simple. Here’s the full workflow.
+Getting everything running is simple. Here's the full workflow.
 
 ### Clone Repository & Copy Environment File
 
