@@ -21,6 +21,19 @@ I wanted to replicate that feeling.
 
 Instead of opening a SQL editor, writing queries, or switching tools, you can simply talk to it the way you talk to a human.
 
+<table align="center">
+  <tr>
+    <td align="center">
+      <img src="https://github.com/ndy-s/wa-multi-agent-ops/blob/main/assets/api-agent-demo.gif" width="230" style="border-radius:8px;">
+      <div style="margin-top:4px;"><strong>API Agent Demo</strong></div>
+    </td>
+    <td align="center">
+      <img src="https://github.com/ndy-s/wa-multi-agent-ops/blob/main/assets/sql-agent-demo.gif" width="230" style="border-radius:8px;">
+      <div style="margin-top:4px;"><strong>SQL Agent Demo</strong></div>
+    </td>
+  </tr>
+</table>
+
 You can say something like:
 
 > “Hey @Bot, show me today's transactions with the highest amounts.”
@@ -30,22 +43,6 @@ Or even something operational like:
 > “Hey @Bot, create a loan account for UAT testing with a random user, any balance is fine, just make sure the account is active.”
 
 The agents take over from there. They generate the SQL or make the API calls, retrieve the data, validate the response, and return everything back to you. There are no extra steps and no friction. It's just a natural conversation that gets work done.
-
-<div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;">
-  <div style="width: 90px; height: 90px;">
-    <img src="https://github.com/ndy-s/wa-multi-agent-ops/blob/main/assets/api-agent-demo.gif" 
-         alt="API Agent Demo" 
-         style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
-    <p style="text-align: center; font-size: 0.65em; margin: 2px 0 0;">API Agent Demo</p>
-  </div>
-
-  <div style="width: 90px; height: 90px;">
-    <img src="https://github.com/ndy-s/wa-multi-agent-ops/blob/main/assets/sql-agent-demo.gif" 
-         alt="SQL Agent Demo" 
-         style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
-    <p style="text-align: center; font-size: 0.65em; margin: 2px 0 0;">SQL Agent Demo</p>
-  </div>
-</div>
 
 ### Why It's Cheap to Run
 
