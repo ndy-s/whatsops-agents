@@ -56,7 +56,7 @@ If you ever want to scale it further or make it more powerful, switching to a pa
 
 ## Quick Setup
 
-Getting the system up and running is straightforward. Here’s the workflow step by step.
+Getting the system up and running is straightforward. Here's the workflow step by step.
 
 ### Clone Repository & Copy Environment File
 
@@ -116,7 +116,7 @@ When I first started building this agent-based application, cost was the first t
 
 For the AI itself, I experiment with both free and paid models. On the free side, I use Google Gemini-2.5-Flash and OpenRouter's DeepSeek-R1T2-Chimera models. Paid options include GPT-4.1 for faster, more capable responses. For embeddings, I rely on either the free all-MiniLM-L6-v2 model or text-embedding-3-small, depending on the task. In practice, the free models are already good enough for most tasks in this project.
 
-To make integration with multiple LLM APIs easier, I rely on [LangChain](https://www.langchain.com/). Each model has its quirks, and LangChain provides a consistent way to interact with them. Switching between models is simple, and adding a new one usually requires only minor tweaks.
+To make integration with multiple LLM APIs easier, I rely on [LangChain](https://www.langchain.com/). Each model works a bit differently, and LangChain provides a consistent way to interact with them. Switching between models is simple and adding a new one usually requires only minor tweaks.
 
 ### The Agents
 
@@ -164,7 +164,9 @@ I also worked to make the conversation feel natural. Agents reply in small chunk
 
 ## Limitations
 
-The Agents require clear and specific instructions to perform correctly. Vague or ambiguous prompts can lead to wrong API calls or incomplete SQL. Free models may occasionally misinterpret uncommon terms, internal system names, or domain-specific jargon, even with the registry in place. Ambiguous requests can trigger follow-up questions from the Agent, adding extra steps before execution. Additionally, SQL queries generated from the schema are strictly read-only, and all data-changing actions must be defined in the predefined SQL registry.
+The Agents work best when given clear and specific instructions. Vague or ambiguous prompts can lead to incorrect API calls or incomplete SQL queries. Free models, in particular, may occasionally misinterpret uncommon terms, internal system names, or domain-specific jargon, even with the registry in place.
+
+Ambiguous requests can also trigger follow-up questions from the Agent, adding extra steps before the action is executed. For safety, any SQL generated from the schema is strictly read-only, and all data-changing operations must be performed using predefined queries from the SQL registry.
 
 ## License
 
