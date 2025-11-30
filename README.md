@@ -107,6 +107,9 @@ If you want to modify the registry later, go to the **Agents Knowledge Base** se
 
 When the bot starts, a QR code will appear in your console. Open WhatsApp on your phone, go to **Linked Devices**, and scan the code. Once linked, the bot is active and will respond to messages according to the whitelist.
 
+> [!TIP]
+> To interact with an Agent in a group chat, you must either tag the bot or quote its message. In private chats, you can simply send a message directly.
+
 ## Under the Hood
 
 When I first started building this agent-based application, cost was the first thing on my mind. No matter how cool a project is, if it is expensive to run, it will not scale, and it probably will not get used at all. I wanted to avoid that trap, so cost became a key design consideration from day one.
