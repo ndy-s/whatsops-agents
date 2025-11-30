@@ -31,11 +31,11 @@ export async function callApi(apiId, params = {}) {
             throw new Error(`HTTP ${res.status}: ${data?.message || "Unknown error"}`);
         }
 
-        logger.info(`API call success: ${apiId} | params=${JSON.stringify(params)}`);
+        logger.info(`[callApi] API call success: ${apiId} | params=${JSON.stringify(params)}`);
 
         return data;
     } catch (err) {
-        logger.error(`API call failed: ${apiId} | error=${err.message} | params=${JSON.stringify(params)}`);
+        logger.error(`[callApi] API call failed: ${apiId} | error=${err.message} | params=${JSON.stringify(params)}`);
         throw err;
     }
 }
