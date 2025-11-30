@@ -54,7 +54,9 @@ Output: ${JSON.stringify({
         return `### ${id || ""} - ${meta.description}\n${fields}\n${examples}`;
     }).join("\n");
 
-    template = template.replace("{{API_LIST}}", apiInstructions);
+    template = template
+        .replace("{{API_LIST}}", apiInstructions)
+        .replace(/{{LOCALE}}/g, config.llmLocale || "en-US");
 
     return template;
 }
