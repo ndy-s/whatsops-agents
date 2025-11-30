@@ -35,8 +35,14 @@ export async function handleMessage(sock, msg) {
         }
     })();
 
+    const sanitizedPreview = preview.replace(/\s+/g, ' ').trim();
+
+    const truncatedPreview = sanitizedPreview.length > 100
+        ? `${sanitizedPreview.slice(0, 100)}... (truncated)`
+        : sanitizedPreview;
+
     logger.info("──────────────────────────────");
-    logger.info(`📩 Message from ${remoteJid} [${messageType}]: ${preview}`);
+    logger.info(`📩 Message from ${remoteJid} [${messageType}]: ${truncatedPreview}`);
 
     sock.store.contacts = { ...loadContacts(), ...sock.store.contacts };
     upsertContact(msg, sock);

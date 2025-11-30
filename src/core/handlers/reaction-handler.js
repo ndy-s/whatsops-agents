@@ -99,6 +99,7 @@ export async function reactionHandler(sock, msg) {
             );
         }
     } catch (error) {
-        console.error("❌ handleReaction error:", error);
+        logger.error(`❌ handleReaction error: ${error?.message || error}`);
+        if (error?.stack) logger.error(error.stack);
     }
 }

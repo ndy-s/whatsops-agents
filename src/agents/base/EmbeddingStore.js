@@ -69,7 +69,14 @@ export class EmbeddingStore {
     }
 
     async findRelevant(query, topN = 3) {
-        logger.info(`[embedder] Finding relevant items for query: "${query}"`);
+        const sanitizedQuery = query.replace(/\s+/g, ' ').trim();
+
+        const truncatedQuery = sanitizedQuery.length > 100
+            ? `${sanitizedQuery.slice(0, 100)}... (truncated)`
+            : sanitizedQuery;
+
+        logger.info(`[embedder] Finding relevant items for query: "${truncatedQuery}"`);
+
         const items = this.cache || [];
         const queryVecRaw = await embedder.embedQuery(query);
         const queryVec = flatten(queryVecRaw);

@@ -1,3 +1,5 @@
+import logger from "./logger.js";
+
 const chatQueues = new Map();
 const isProcessing = new Map();
 
@@ -27,7 +29,7 @@ async function processQueue(chatId) {
     try {
         await handler();
     } catch (err) {
-        console.error(`[queue] Error processing message in ${chatId}:`, err);
+        logger.error(`[queue] Error processing message in ${chatId}: ${err?.message || err}`);
     }
 
     setImmediate(() => processQueue(chatId));

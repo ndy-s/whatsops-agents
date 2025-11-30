@@ -57,7 +57,7 @@ function parseCustomHeaders(raw) {
 const requiredEnv = ["APP_AUTH_USER", "APP_AUTH_PASS"];
 for (const key of requiredEnv) {
     if (!process.env[key]) {
-        console.error(`❌ Missing required environment variable: ${key}`);
+        logger.error(`❌ Missing required environment variable: ${key}`);
         process.exit(1);
     }
 }

@@ -6,7 +6,7 @@ let embedderPipeline = null;
 async function getEmbedder() {
     if (!embedderPipeline) {
         embedderPipeline = await pipeline("feature-extraction", "Xenova/all-MiniLM-L6-v2");
-        logger.info("✅ Local embedding model loaded");
+        logger.info("[getEmbedder] Local embedding model loaded");
     }
     return embedderPipeline;
 }

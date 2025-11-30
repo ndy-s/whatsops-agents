@@ -30,7 +30,7 @@ async function seedDefaultSettings(db) {
             ["OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1", "string", 0],
 
             ["LLM_LOCALE", "en-US", "string", 0],
-            ["MODEL_PRIORITY", "gemini,deepseek", "string", 0],
+            ["MODEL_PRIORITY", "gemini,deepseek,gpt", "string", 0],
 
             ["USE_EMBEDDING", "true", "boolean", 0],
             ["EMBEDDING_MODEL", "minilm", "string", 0],
@@ -57,7 +57,7 @@ async function seedDefaultSettings(db) {
 
 async function seedAgentPrompts(db) {
     try {
-        const jsonFile = path.resolve("./src/agents/base/agent-prompts.json");
+        const jsonFile = path.resolve("./src/seed/agent-prompts.json");
 
         if (!fs.existsSync(jsonFile)) {
             logger.error(`❌ Agent prompts file not found at ${jsonFile}`);
@@ -86,9 +86,9 @@ async function seedAgentPrompts(db) {
 
 async function seedRegistry(db) {
     try {
-        const apiRegistryJson = path.resolve("./src/agents/base/api-registry.json");
-        const schemaRegistryJson = path.resolve("./src/agents/base/schema-registry.json");
-        const sqlRegistryJson = path.resolve("./src/agents/base/sql-registry.json");
+        const apiRegistryJson = path.resolve("./src/seed/api-registry.json");
+        const schemaRegistryJson = path.resolve("./src/seed/schema-registry.json");
+        const sqlRegistryJson = path.resolve("./src/seed/sql-registry.json");
 
         const insertStmt = db.prepare(`
             INSERT OR IGNORE INTO registry (name, type, content)
@@ -214,7 +214,7 @@ export async function openSqliteDB() {
             await seedRegistry(dbLocalInstance);
         }
 
-        logger.info("✅ Local database tables ready (api_logs & app_settings)");
+        logger.info("✅ Local database tables ready (api_logs, agent_prompts, registry, & app_settings)");
     } catch (err) {
         logger.error("❌ Failed to initialize local DB:", err);
         throw err;

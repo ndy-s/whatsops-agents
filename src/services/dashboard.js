@@ -237,7 +237,7 @@ export async function startOpsDashboard(port = 55555) {
     });
 
     app.listen(port, () => {
-        logger.info(`📊 Ops Dashboard running at http://localhost:${port}`);
+        logger.info(`🟢 Agents Dashboard running at http://localhost:${port}`);
     });
 }
 

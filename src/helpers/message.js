@@ -112,5 +112,9 @@ export async function sendChunkedMessage(sock, remoteJid, msg, text) {
         });
     }
 
-    logger.info(`✅ Replied to ${remoteJid}: ${text.slice(0, 100)}`);
+    const truncatedText = text.length > 100 
+        ? `${text.slice(0, 100)}... (truncated)` 
+        : text;
+
+    logger.info(`✅ Replied to ${remoteJid}: ${truncatedText}`);
 }

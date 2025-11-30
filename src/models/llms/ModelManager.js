@@ -1,5 +1,6 @@
-import * as deepseek from "./deepseek.js";
 import * as gemini from "./gemini.js";
+import * as deepseek from "./deepseek.js";
+import * as gpt from "./gpt.js";
 import logger from "../../helpers/logger.js";
 
 export class ModelManager {
@@ -15,7 +16,7 @@ export class ModelManager {
     }
 
     async getModel() {
-        const models = { deepseek, gemini };
+        const models = { deepseek, gemini, gpt };
         const now = Date.now();
 
         for (const modelName of this.strategy) {
