@@ -2,7 +2,7 @@ import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages
 import logger from "../../helpers/logger.js";
 import { parseAndValidateResponse, extractValidationErrors } from "./response-validator.js";
 import { addMemory, getRecentMemory } from "../../helpers/memory-store.js";
-import { saveApiLog } from "../../repositories/api-log-repository.js";
+import { apiLogRepository } from "../../repositories/api-log-repository.js";
 import { jakartaTime, stripCodeBlock, summarizeTokens } from "../../helpers/utils.js";
 
 export class AgentBase {
@@ -23,7 +23,7 @@ export class AgentBase {
     }
 
     async logApi(params) {
-        await saveApiLog({
+        await apiLogRepository.saveApiLog({
             chatId: params.remoteJid,
             userId: params.userJid,
             systemPrompt: params.systemPrompt,

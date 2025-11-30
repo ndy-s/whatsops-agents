@@ -2,13 +2,13 @@ import path from "path";
 import express from "express";
 import logger from "../helpers/logger.js";
 import { loadConfig } from "../config/env.js";
-import { openSqliteDB } from "../db/sqlite.js";
 import { agentPromptsRepository } from "../repositories/agent-prompts-repository.js";
 import { registryRepository } from "../repositories/registry-repository.js";
+import { apiLogRepository } from "../repositories/api-log-repository.js";
+import { settingsRepository } from "../repositories/settings-repository.js";
 
 export async function startOpsDashboard(port = 55555) {
     const config = await loadConfig();
-    const db = await openSqliteDB();
     const app = express();
 
     app.use(express.text({ type: "text/plain" }));
@@ -19,7 +19,7 @@ export async function startOpsDashboard(port = 55555) {
 
         const auth = req.headers.authorization;
         if (!auth) {
-            res.setHeader('WWW-Authenticate', 'Basic realm="Ops Agent Logs"');
+            res.setHeader('WWW-Authenticate', 'Basic realm="Agents Dashboard"');
             return res.status(401).send("Authentication required.");
         }
 
@@ -41,25 +41,9 @@ export async function startOpsDashboard(port = 55555) {
         res.sendFile(path.join(process.cwd(), "public", "index.html"));
     });
 
-    app.get("/api/logs", (req, res) => {
+    app.get("/api/logs", async (req, res) => {
         try {
-            const { search, offset = 0, limit = 15, sortKey = "created_at", sortDir = "DESC" } = req.query;
-            let query = `
-                SELECT * FROM api_logs
-                ${search ? `WHERE chat_id LIKE @search
-                            OR user_id LIKE @search
-                            OR model_name LIKE @search
-                            OR user_message LIKE @search
-                            OR model_response LIKE @search` : ""}
-                ORDER BY ${sortKey} ${sortDir}
-                LIMIT @limit OFFSET @offset
-            `;
-            const stmt = db.prepare(query);
-            const rows = stmt.all({
-                search: search ? `%${search}%` : undefined,
-                limit: parseInt(limit),
-                offset: parseInt(offset)
-            });
+            const rows = await apiLogRepository.getLogs(req.query);
             res.json(rows);
         } catch (err) {
             logger.error("Failed to fetch logs:", err);
@@ -169,59 +153,74 @@ export async function startOpsDashboard(port = 55555) {
         }
     });
 
-    app.get("/api/settings", (req, res) => {
+    app.get("/api/settings", async (req, res) => {
         try {
-            const rows = db.prepare("SELECT * FROM app_settings").all();
+            const rows = await settingsRepository.list();
 
             const normalized = rows.map(r => {
                 let value = r.value;
                 const key = r.key;
 
-                if ((key.endsWith("_API_KEYS") || (key.endsWith("_KEYWORDS")) || key === "WHITELIST") || key === "MODEL_PRIORITY" || key === "API_CUSTOM_HEADERS") {
-                    if (typeof value === "string") value = value.split(",").join("\n");
+                const isListField =
+                    key.endsWith("_API_KEYS") ||
+                        key.endsWith("_KEYWORDS") ||
+                        key === "WHITELIST" ||
+                        key === "MODEL_PRIORITY" ||
+                        key === "API_CUSTOM_HEADERS";
+
+                // Convert comma → newline
+                if (isListField && typeof value === "string") {
+                    value = value.split(",").join("\n");
                 }
 
-                return {
-                    ...r,
-                    value
-                };
+                return { ...r, value };
             });
 
             res.json(normalized);
         } catch (err) {
-            logger.error("Failed to fetch settings:", err);
             res.status(500).json({ error: "Failed to fetch settings" });
         }
     });
 
-    app.post("/api/settings", (req, res) => {
+    app.post("/api/settings", async (req, res) => {
         try {
-            const settings = req.body;
-            const stmt = db.prepare(`
-            INSERT INTO app_settings (key, value)
-            VALUES (?, ?)
-            ON CONFLICT(key) DO UPDATE SET value=excluded.value
-        `);
+            const input = req.body;
+            const finalToSave = {};
 
-            for (const key in settings) {
-                let val = settings[key];
+            for (const key in input) {
+                let val = input[key];
 
                 if (val === null || val === undefined) {
-                   val = "";
+                    val = "";
                 } else if (typeof val === "boolean") {
                     val = val ? "true" : "false";
-                } else if ((key.endsWith("_API_KEYS") || (key.endsWith("_KEYWORDS")) || key === "WHITELIST") || key === "MODEL_PRIORITY" || key === "API_CUSTOM_HEADERS" && typeof val === "string") {
-                    val = val.split("\n").map(s => s.trim()).filter(Boolean).join(",");
-                } else {
+                }
+
+                const isListField =
+                    key.endsWith("_API_KEYS") ||
+                        key.endsWith("_KEYWORDS") ||
+                        key === "WHITELIST" ||
+                        key === "MODEL_PRIORITY" ||
+                        key === "API_CUSTOM_HEADERS";
+
+                // Convert newline → comma for list fields
+                if (isListField && typeof val === "string") {
+                    val = val
+                        .split("\n")
+                        .map(s => s.trim())
+                        .filter(Boolean)
+                        .join(",");
+                } else if (typeof val !== "string") {
                     val = val.toString();
                 }
 
-                stmt.run(key, val);
+                finalToSave[key] = val;
             }
+
+            await settingsRepository.saveMany(finalToSave);
 
             res.json({ success: true, message: "Settings saved" });
         } catch (err) {
-            logger.error("Failed to save settings:", err);
             res.status(500).json({ error: "Failed to save settings" });
         }
     });
